@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="theme-color" content="#00eeff"/>
+<title>VISION AI — JARVIS</title>
+<link rel="manifest" href="/manifest.json"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- LOCK SCREEN -->
+<div id="lockScreen" class="lock">
+  <canvas id="lockCanvas" class="lock-canvas"></canvas>
+  <div class="lock-content">
+    <div class="lock-hex-ring">
+      <svg viewBox="0 0 120 120" width="120" height="120">
+        <polygon points="60,6 108,33 108,87 60,114 12,87 12,33" fill="none" stroke="#00eeff" stroke-width="1" opacity="0.4"/>
+        <polygon points="60,14 100,37 100,83 60,106 20,83 20,37" fill="none" stroke="#00eeff" stroke-width="1.5" opacity="0.7" style="filter:drop-shadow(0 0 6px #00eeff)"/>
+        <text x="60" y="68" text-anchor="middle" fill="#00eeff" font-size="32" font-family="Orbitron" font-weight="900" style="filter:drop-shadow(0 0 10px #00eeff)">V</text>
+      </svg>
+    </div>
+    <div class="lock-title">VISION AI</div>
+    <div class="lock-sub">AUTHORIZED ACCESS ONLY</div>
+    <div class="lock-field">
+      <div class="lock-field-label">ACCESS CODE</div>
+      <input type="password" id="codeInput" placeholder="▮▮▮▮▮▮▮▮▮▮▮▮" maxlength="20" onkeydown="if(event.key==='Enter')checkCode()"/>
+      <div class="lock-field-line"></div>
+    </div>
+    <button class="lock-btn" onclick="checkCode()">
+      <span class="lock-btn-text">AUTHENTICATE</span>
+      <div class="lock-btn-scan"></div>
+    </button>
+    <div class="lock-error" id="lockError"></div>
+    <div class="lock-hint">Vision2026Tomi</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" class="app" style="display:none">
+
+  <!-- Animated background -->
+  <canvas id="bgCanvas" class="bg-canvas"></canvas>
+  <div class="bg-overlay"></div>
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">
+        <svg viewBox="0 0 40 40" width="36" height="36">
+          <polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="none" stroke="#00eeff" stroke-width="1.5" style="filter:drop-shadow(0 0 4px #00eeff)"/>
+          <text x="20" y="26" text-anchor="middle" fill="#00eeff" font-size="14" font-family="Orbitron" font-weight="900">V</text>
+        </svg>
+      </div>
+      <div>
+        <div class="topbar-name">VISION AI</div>
+        <div class="topbar-sub">TOMILOLA UNIT // v3.0</div>
+      </div>
+    </div>
+    <div class="topbar-center">
+      <div class="topbar-clock" id="clock">00:00:00</div>
+      <div class="topbar-date" id="dateDisp">---</div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-pill" id="aiStatus">⚡ AI ONLINE</div>
+      <div class="topbar-pill green" id="micStatus">🎤 MIC READY</div>
+      <div class="topbar-stat" id="tbBatt">🔋 --%</div>
+      <div class="topbar-stat" id="tbLat">⚡ --ms</div>
+    </div>
+  </header>
+
+  <!-- MAIN LAYOUT: 3 columns -->
+  <div class="layout">
+
+    <!-- LEFT PANEL -->
+    <aside class="panel-left">
+
+      <!-- Vision Core -->
+      <div class="core-section">
+        <div class="core-wrap" id="visionCore" onclick="activateVision()">
+          <div class="core-ring r1"></div>
+          <div class="core-ring r2"></div>
+          <div class="core-ring r3"></div>
+          <div class="core-body">
+            <div class="core-eyes">
+              <div class="eye" id="eyeL"><div class="eyelid" id="elidL"></div><div class="pupil" id="pupL"></div></div>
+              <div class="eye" id="eyeR"><div class="eyelid" id="elidR"></div><div class="pupil" id="pupR"></div></div>
+            </div>
+            <div class="core-bars" id="waveBars">
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <div class="core-status" id="coreStatus">STANDBY</div>
+          </div>
+        </div>
+        <div class="core-btns">
+          <button class="cbtn" id="micBtn" onclick="toggleListening()" title="Mic">🎤</button>
+          <button class="cbtn" id="typeBtn" onclick="toggleTyping()" title="Type">⌨</button>
+          <button class="cbtn" id="muteBtn" onclick="toggleMute()" title="Mute">🔊</button>
+          <button class="cbtn" onclick="openHelp()" title="Help">❓</button>
+        </div>
+      </div>
+
+      <!-- Vitals -->
+      <div class="card">
+        <div class="card-title">◈ SYSTEM VITALS</div>
+        <div class="stat-row"><span>CPU TEMP</span><span class="sv cyan" id="cpuTemp">--°C</span></div>
+        <div class="bar-wrap"><div class="bar cyan" id="cpuBar" style="width:0%"></div></div>
+        <div class="stat-row"><span>HAND TEMP</span><span class="sv orange" id="handTemp">--°C</span></div>
+        <div class="bar-wrap"><div class="bar orange" id="handBar" style="width:0%"></div></div>
+        <div class="stat-row"><span>BATTERY</span><span class="sv green" id="battPct">--%</span></div>
+        <div class="bar-wrap"><div class="bar green" id="battBar" style="width:0%"></div></div>
+        <div class="stat-row"><span>MEMORY</span><span class="sv purple" id="heapMem">--MB</span></div>
+        <div class="bar-wrap"><div class="bar purple" id="heapBar" style="width:0%"></div></div>
+      </div>
+
+      <!-- Mouse tracker -->
+      <div class="card">
+        <div class="card-title">◈ INPUT TRACKER</div>
+        <div class="stat-row"><span>POSITION</span><span class="sv cyan" id="mxy">0 / 0</span></div>
+        <div class="stat-row"><span>VELOCITY</span><span class="sv green" id="mvel">0 px/s</span></div>
+        <div class="stat-row"><span>ACTIVITY</span><span class="sv orange" id="mact">IDLE</span></div>
+        <div class="radar-box">
+          <div class="radar-inner">
+            <div class="radar-sweep"></div>
+            <div class="radar-dot" id="radarDot"></div>
+            <div class="radar-ring"></div>
+            <div class="radar-ring r2"></div>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- CENTER -->
+    <main class="panel-center">
+
+      <!-- Nav tabs -->
+      <nav class="nav">
+        <button class="ntab active" onclick="showTab('chat',this)">💬 CHAT</button>
+        <button class="ntab" onclick="showTab('mainframe',this)">⚡ MAINFRAME</button>
+        <button class="ntab" onclick="showTab('homework',this)">📚 HOMEWORK</button>
+        <button class="ntab" onclick="showTab('browser',this)">🌐 BROWSER</button>
+        <button class="ntab" onclick="showTab('scanner',this)">📷 SCANNER</button>
+        <button class="ntab" onclick="showTab('memory',this)">🧠 MEMORY</button>
+        <button class="ntab" onclick="showTab('code',this)">💻 CODE</button>
+        <button class="ntab" onclick="showTab('notes',this)">📝 NOTES</button>
+      </nav>
+
+      <!-- TAB: CHAT -->
+      <div class="tab active" id="tab-chat">
+        <div class="chat-log" id="chatMessages">
+          <div class="msg system"><span class="mwho">VISION</span><span class="mtext">System initialized. Click the core or speak to begin, Tomilola.</span></div>
+        </div>
+        <div class="chat-bottom">
+          <div class="type-area" id="typeBox" style="display:none">
+            <span class="type-arrow">▶</span>
+            <input type="text" id="typeInput" placeholder="Type a command to Vision..." onkeydown="if(event.key==='Enter')sendTyped()"/>
+            <button class="send-btn" onclick="sendTyped()">SEND ▶</button>
+          </div>
+          <div class="voice-status" id="voiceHint">🎤 Click the circle or press SPACE to activate Vision</div>
+        </div>
+      </div>
+
+      <!-- TAB: MAINFRAME -->
+      <div class="tab" id="tab-mainframe">
+        <div class="mf-wrap">
+          <div class="mf-top">
+            <div class="mf-card"><div class="mf-label">AI ENGINE</div><div class="mf-val cyan" id="mfAI">GROQ LLAMA 3.1</div><div class="mf-sub">ONLINE</div></div>
+            <div class="mf-card"><div class="mf-label">MEMORY CORE</div><div class="mf-val green" id="mfFacts">0 FACTS</div><div class="mf-sub">LEARNING</div></div>
+            <div class="mf-card"><div class="mf-label">UPTIME</div><div class="mf-val orange" id="mfUptime">00:00:00</div><div class="mf-sub">ACTIVE</div></div>
+            <div class="mf-card"><div class="mf-label">REQUESTS</div><div class="mf-val purple" id="mfReqs">0</div><div class="mf-sub">PROCESSED</div></div>
+          </div>
+          <div class="mf-mid">
+            <div class="mf-panel">
+              <div class="mf-panel-title">◈ LIVE DATA STREAM</div>
+              <div class="mf-stream" id="mfStream"></div>
+            </div>
+            <div class="mf-panel">
+              <div class="mf-panel-title">◈ NEURAL NETWORK</div>
+              <canvas id="neuralCanvas" class="mf-canvas"></canvas>
+              <div class="mf-mini-stats">
+                <div class="mf-mrow"><span>NEURAL LOAD</span><span class="cyan" id="mfNeural">--</span></div>
+                <div class="mf-mrow"><span>RESPONSE</span><span class="green" id="mfResp">--ms</span></div>
+                <div class="mf-mrow"><span>ACCURACY</span><span class="orange">99.7%</span></div>
+              </div>
+            </div>
+            <div class="mf-panel">
+              <div class="mf-panel-title">◈ MATRIX</div>
+              <canvas id="matrixCanvas" class="mf-canvas"></canvas>
+            </div>
+          </div>
+          <div class="mf-bot">
+            <div class="mf-panel">
+              <div class="mf-panel-title">◈ DIAGNOSTICS</div>
+              <div class="diag-grid">
+                <div class="diag ok">VOICE <span>OK</span></div>
+                <div class="diag ok">AI CORE <span>OK</span></div>
+                <div class="diag ok">MEMORY <span>OK</span></div>
+                <div class="diag ok">CAMERA <span>STANDBY</span></div>
+                <div class="diag ok">NETWORK <span>ONLINE</span></div>
+                <div class="diag ok">SECURITY <span>LOCKED</span></div>
+              </div>
+            </div>
+            <div class="mf-panel">
+              <div class="mf-panel-title">◈ QUICK COMMANDS</div>
+              <div class="cmd-grid">
+                <button class="cmd-btn" onclick="sendToVision('What time is it?')">⏰ TIME</button>
+                <button class="cmd-btn" onclick="sendToVision('Tell me a joke')">😄 JOKE</button>
+                <button class="cmd-btn" onclick="sendToVision('What is the weather today?')">🌤 WEATHER</button>
+                <button class="cmd-btn" onclick="sendToVision('Give me a motivational quote')">💡 INSPIRE</button>
+                <button class="cmd-btn" onclick="sendToVision('What can you do?')">🤖 ABILITIES</button>
+                <button class="cmd-btn" onclick="sendToVision('Search for latest AI news')">🔍 NEWS</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: HOMEWORK -->
+      <div class="tab" id="tab-homework">
+        <div class="hw-wrap">
+          <div class="hw-header">
+            <div class="hw-title">◈ VISION HOMEWORK AI</div>
+            <div class="hw-sub">Upload image • paste text • drop file • share link</div>
+          </div>
+          <div class="hw-tabs">
+            <button class="htab active" onclick="switchHwTab('text',this)">✏️ TYPE</button>
+            <button class="htab" onclick="switchHwTab('image',this)">🖼 IMAGE</button>
+            <button class="htab" onclick="switchHwTab('file',this)">📄 FILE</button>
+            <button class="htab" onclick="switchHwTab('link',this)">🔗 LINK</button>
+          </div>
+          <div class="hw-panel active" id="hw-text">
+            <textarea id="hwText" class="hw-textarea" placeholder="Paste your homework question here...&#10;Example: Solve for x: 2x + 5 = 13&#10;Example: Explain the causes of World War 1&#10;Example: Write a Python function that sorts a list"></textarea>
+          </div>
+          <div class="hw-panel" id="hw-image">
+            <div class="hw-drop" id="hwDrop" ondrop="handleHwDrop(event)" ondragover="event.preventDefault()" onclick="$('hwImgInput').click()">
+              <div class="hw-drop-icon">🖼</div>
+              <div class="hw-drop-text">DROP IMAGE OR CLICK TO UPLOAD</div>
+              <div class="hw-drop-sub">Take a photo of your homework — Vision will solve it</div>
+              <input type="file" id="hwImgInput" accept="image/*" style="display:none" onchange="handleHwImage(event)"/>
+            </div>
+            <img id="hwImgPreview" style="display:none;max-width:100%;max-height:180px;border:1px solid rgba(0,200,255,0.3);margin-top:8px"/>
+          </div>
+          <div class="hw-panel" id="hw-file">
+            <div class="hw-drop" onclick="$('hwFileInput').click()">
+              <div class="hw-drop-icon">📄</div>
+              <div class="hw-drop-text">CLICK TO UPLOAD FILE</div>
+              <div class="hw-drop-sub">.txt .py .js .html .css .csv .json .md</div>
+              <input type="file" id="hwFileInput" accept=".txt,.py,.js,.html,.css,.csv,.json,.md" style="display:none" onchange="handleHwFile(event)"/>
+            </div>
+            <div id="hwFileContent" class="hw-file-preview" style="display:none"></div>
+          </div>
+          <div class="hw-panel" id="hw-link">
+            <div class="hw-link-row">
+              <span>🔗</span>
+              <input type="text" id="hwLink" class="hw-link-input" placeholder="Paste a URL or YouTube link..."/>
+            </div>
+          </div>
+          <div class="hw-subjects">
+            <span class="hw-subj-label">SUBJECT:</span>
+            <button class="hsubj active" onclick="setSubject('auto',this)">🤖 AUTO</button>
+            <button class="hsubj" onclick="setSubject('math',this)">🔢 MATH</button>
+            <button class="hsubj" onclick="setSubject('science',this)">🔬 SCIENCE</button>
+            <button class="hsubj" onclick="setSubject('english',this)">📖 ENGLISH</button>
+            <button class="hsubj" onclick="setSubject('history',this)">🏛 HISTORY</button>
+            <button class="hsubj" onclick="setSubject('code',this)">💻 CODING</button>
+          </div>
+          <div class="hw-actions">
+            <button class="hbtn solve" onclick="solveHomework()">⚡ SOLVE</button>
+            <button class="hbtn explain" onclick="explainHomework()">📖 EXPLAIN</button>
+            <button class="hbtn check" onclick="checkHomework()">✅ CHECK</button>
+            <button class="hbtn clear" onclick="clearHomework()">🗑 CLEAR</button>
+          </div>
+          <div class="hw-answer" id="hwAnswer" style="display:none">
+            <div class="hw-answer-top">
+              <span class="card-title">◈ VISION ANSWER</span>
+              <button class="cbtn" onclick="copyAnswer()">📋 COPY</button>
+              <button class="cbtn" onclick="speakAnswer()">🔊 READ</button>
+            </div>
+            <div id="hwAnswerText" class="hw-answer-body"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: BROWSER -->
+      <div class="tab" id="tab-browser">
+        <div class="browser-wrap">
+          <div class="browser-bar">
+            <button class="bbtn" onclick="browserBack()">◀</button>
+            <button class="bbtn" onclick="browserForward()">▶</button>
+            <button class="bbtn" onclick="browserRefresh()">⟳</button>
+            <div class="url-wrap">
+              <span class="url-lock">🔒</span>
+              <input type="text" id="browserUrl" class="url-input" placeholder="Enter URL or search..." onkeydown="if(event.key==='Enter')browserGo()"/>
+            </div>
+            <button class="go-btn" onclick="browserGo()">GO</button>
+          </div>
+          <div class="browser-shortcuts">
+            <button class="sc-btn" onclick="loadUrl('https://google.com')">Google</button>
+            <button class="sc-btn" onclick="loadUrl('https://youtube.com')">YouTube</button>
+            <button class="sc-btn" onclick="loadUrl('https://discord.com/app')">Discord</button>
+            <button class="sc-btn" onclick="loadUrl('https://github.com')">GitHub</button>
+            <button class="sc-btn" onclick="loadUrl('https://reddit.com')">Reddit</button>
+            <button class="sc-btn" onclick="loadUrl('https://twitter.com')">Twitter/X</button>
+          </div>
+          <div class="browser-frame-wrap">
+            <iframe id="browserFrame" class="browser-frame" src="about:blank" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation"></iframe>
+            <div class="browser-blocked" id="browserBlocked" style="display:none">
+              <div class="blocked-icon">🔒</div>
+              <div class="blocked-title">SITE BLOCKED EMBEDDING</div>
+              <div class="blocked-msg">Opening in new tab...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: SCANNER -->
+      <div class="tab" id="tab-scanner">
+        <div class="scanner-wrap">
+          <div class="scanner-view">
+            <video id="cameraFeed" autoplay playsinline muted></video>
+            <div class="scan-overlay">
+              <div class="scan-line" id="scanLine"></div>
+              <div class="sc-corner tl"></div><div class="sc-corner tr"></div>
+              <div class="sc-corner bl"></div><div class="sc-corner br"></div>
+              <div class="scan-cross"></div>
+            </div>
+            <div class="cam-off" id="camOff">SCANNER OFFLINE<br><small>Click ACTIVATE</small></div>
+          </div>
+          <div class="scanner-controls">
+            <button class="action-btn" id="camBtn" onclick="toggleCamera()">⚡ ACTIVATE SCANNER</button>
+            <button class="action-btn" onclick="analyzeScene()">🔍 ANALYZE SCENE</button>
+            <button class="action-btn" onclick="captureSnapshot()">📸 SNAPSHOT</button>
+          </div>
+          <div class="scan-result" id="scanResult">
+            <div class="card-title">◈ SCAN ANALYSIS</div>
+            <p id="scanResultText">No analysis yet. Activate scanner and click Analyze Scene.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: MEMORY -->
+      <div class="tab" id="tab-memory">
+        <div class="memory-wrap">
+          <div class="mem-stats-box" id="memStats">Loading memory core...</div>
+          <div class="mem-facts-list" id="memFacts"></div>
+        </div>
+      </div>
+
+      <!-- TAB: CODE -->
+      <div class="tab" id="tab-code">
+        <div class="code-wrap">
+          <div class="code-toolbar">
+            <span class="card-title">◈ CODE EXECUTOR</span>
+            <button class="action-btn" onclick="runCode()">▶ RUN</button>
+            <button class="action-btn" onclick="clearCode()">🗑 CLEAR</button>
+            <button class="action-btn" onclick="askVisionCode()">🤖 ASK VISION</button>
+          </div>
+          <textarea id="codeEditor" class="code-editor" placeholder="# Write Python code here...&#10;print('Hello from Vision AI')&#10;result = 2 ** 32&#10;print(f'2^32 = {result}')"></textarea>
+          <div class="code-out-wrap">
+            <div class="card-title">◈ OUTPUT</div>
+            <div id="codeOutput" class="code-output">Ready to execute...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: NOTES -->
+      <div class="tab" id="tab-notes">
+        <div class="notes-wrap">
+          <div class="notes-toolbar">
+            <span class="card-title">◈ VISION NOTEPAD</span>
+            <button class="action-btn" onclick="saveNote()">💾 SAVE</button>
+            <button class="action-btn" onclick="clearNote()">🗑 CLEAR</button>
+          </div>
+          <textarea id="notepad" class="notepad" placeholder="Type notes here... Vision can read these if you ask."></textarea>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- RIGHT PANEL -->
+    <aside class="panel-right">
+
+      <!-- Environment -->
+      <div class="card">
+        <div class="card-title">◈ ENVIRONMENT</div>
+        <div class="stat-row"><span>LOCATION</span><span class="sv cyan" id="loc">DETECTING</span></div>
+        <div class="stat-row"><span>TIMEZONE</span><span class="sv" id="tz">--</span></div>
+        <div class="stat-row"><span>SCREEN</span><span class="sv" id="scr">--</span></div>
+        <div class="stat-row"><span>PLATFORM</span><span class="sv" id="plat">--</span></div>
+        <div class="stat-row"><span>BROWSER</span><span class="sv" id="brow">--</span></div>
+      </div>
+
+      <!-- Network -->
+      <div class="card">
+        <div class="card-title">◈ NETWORK</div>
+        <div class="stat-row"><span>STATUS</span><span class="sv green" id="netStat">ONLINE</span></div>
+        <div class="stat-row"><span>TYPE</span><span class="sv" id="netType">--</span></div>
+        <div class="stat-row"><span>LATENCY</span><span class="sv cyan" id="netLat">-- ms</span></div>
+        <div class="stat-row"><span>SERVER</span><span class="sv green" id="srvStat">--</span></div>
+        <canvas id="latencyCanvas" class="latency-graph"></canvas>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="card">
+        <div class="card-title">◈ QUICK ACTIONS</div>
+        <div class="qa-grid">
+          <button class="qa-btn" onclick="quickAction('weather')">🌤 Weather</button>
+          <button class="qa-btn" onclick="quickAction('time')">🕐 Time</button>
+          <button class="qa-btn" onclick="quickAction('joke')">😄 Joke</button>
+          <button class="qa-btn" onclick="quickAction('news')">📰 News</button>
+          <button class="qa-btn" onclick="quickAction('math')">🔢 Math</button>
+          <button class="qa-btn" onclick="quickAction('idea')">💡 Idea</button>
+        </div>
+      </div>
+
+      <!-- Activity log -->
+      <div class="card">
+        <div class="card-title">◈ ACTIVITY LOG</div>
+        <div class="log-list" id="activityLog">
+          <div class="log-item">System boot complete</div>
+          <div class="log-item">Vision AI initialized</div>
+        </div>
+      </div>
+
+    </aside>
+
+  </div><!-- end layout -->
+
+  <!-- HELP PANEL -->
+  <div class="help-overlay" id="helpOverlay" onclick="closeHelp()"></div>
+  <div class="help-panel" id="helpPanel">
+    <button class="help-close" onclick="closeHelp()">✕ CLOSE</button>
+    <h2>◈ VISION COMMAND GUIDE</h2>
+    <div class="hs"><h3>🎤 Voice</h3><p>Vision listens automatically after activation. Just speak.</p></div>
+    <div class="hs"><h3>⌨️ Typing</h3><p>Press <b>T</b> or click ⌨ to type. Press Enter to send.</p></div>
+    <div class="hs"><h3>🌐 Browser</h3><p>Built-in browser. Some sites block embedding — they open in a new tab.</p></div>
+    <div class="hs"><h3>📷 Scanner</h3><p>Activate camera, then click Analyze Scene for Vision to describe what it sees.</p></div>
+    <div class="hs"><h3>📚 Homework</h3><p>Upload a photo of your homework or type the question. Vision solves it.</p></div>
+    <div class="hs"><h3>⌨️ Shortcuts</h3><p><b>Space</b> — activate<br><b>T</b> — type mode<br><b>M</b> — mute<br><b>H</b> — help<br><b>Esc</b> — close</p></div>
+  </div>
+
+  <!-- Status bar -->
+  <div class="statusbar">
+    <span>VISION AI v3.0</span>
+    <span>//</span>
+    <span>TOMILOLA UNIT</span>
+    <span>//</span>
+    <span id="sbStatus">ALL SYSTEMS NOMINAL</span>
+    <span>//</span>
+    <span>GROQ LLAMA 3.1</span>
+    <span>//</span>
+    <span id="sbTime">--:--:--</span>
+  </div>
+
+  <canvas id="cameraCanvas" style="display:none"></canvas>
+
+</div><!-- end app -->
+
+<script src="vision.js"></script>
+</body>
+</html>
