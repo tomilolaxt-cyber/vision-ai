@@ -1,6 +1,6 @@
 ﻿// VISION AI JS - loading...
 // VISION AI v3.0 - JARVIS Interface
-const ACCESS_CODE = 'Vision2026Tomi';
+const ACCESS_CODE = 'AnneTomi2';
 const API_BASE = '';
 const OWNER = 'Tomilola';
 
