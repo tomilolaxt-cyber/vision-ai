@@ -386,6 +386,78 @@ def health():
     })
 
 
+# ── File Manager ──────────────────────────────────────────────
+@app.route('/files/create', methods=['POST'])
+def create_file():
+    import pathlib
+    data     = request.get_json()
+    ftype    = data.get('type', 'file')      # 'file' or 'folder'
+    name     = data.get('name', '').strip()
+    location = data.get('location', '').strip()
+    content  = data.get('content', '')
+
+    if not name:
+        return jsonify({"success": False, "message": "No name provided."})
+
+    # Default location is Desktop
+    if not location:
+        location = str(pathlib.Path.home() / 'Desktop')
+
+    try:
+        full_path = pathlib.Path(location) / name
+
+        if ftype == 'folder':
+            full_path.mkdir(parents=True, exist_ok=True)
+            return jsonify({"success": True, "message": f"Folder created: {full_path}", "path": str(full_path)})
+        else:
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+            full_path.write_text(content, encoding='utf-8')
+            return jsonify({"success": True, "message": f"File created: {full_path}", "path": str(full_path)})
+
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Error: {e}"})
+
+
+@app.route('/files/list', methods=['POST'])
+def list_files():
+    import pathlib
+    data     = request.get_json()
+    location = data.get('location', '').strip()
+
+    if not location:
+        location = str(pathlib.Path.home() / 'Desktop')
+
+    try:
+        p = pathlib.Path(location)
+        if not p.exists():
+            return jsonify({"success": False, "message": f"Path not found: {location}"})
+
+        items = []
+        for item in sorted(p.iterdir()):
+            items.append({
+                "name": item.name,
+                "type": "folder" if item.is_dir() else "file",
+                "size": item.stat().st_size if item.is_file() else 0
+            })
+        return jsonify({"success": True, "items": items, "path": str(p)})
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Error: {e}"})
+
+
+@app.route('/files/open', methods=['POST'])
+def open_folder():
+    import subprocess, pathlib
+    data     = request.get_json()
+    location = data.get('location', '').strip()
+    if not location:
+        location = str(pathlib.Path.home() / 'Desktop')
+    try:
+        subprocess.Popen(f'explorer "{location}"')
+        return jsonify({"success": True, "message": f"Opened: {location}"})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+
 # ── Hotspot routes ────────────────────────────────────────────
 try:
     from hotspot import start_hotspot, stop_hotspot, get_status as hs_get_status, get_connected_devices

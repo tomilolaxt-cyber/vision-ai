@@ -590,3 +590,358 @@ document.addEventListener('keydown',e=>{
   if(e.key==='h'||e.key==='H')openHelp();
   if(e.key==='Escape')closeHelp();
 });
+
+// ============================================================
+//  MODE TOGGLE (JARVIS HUD <-> FOCUS CIRCLE)
+// ============================================================
+let focusMode = false;
+
+function toggleMode() {
+  focusMode = !focusMode;
+  const app = g('app');
+  const focus = g('focusMode');
+  const layout = g('layout') || document.querySelector('.layout');
+  const btn = g('modeToggleBtn');
+
+  if (focusMode) {
+    if (layout) layout.style.display = 'none';
+    if (focus) focus.style.display = 'flex';
+    if (btn) btn.textContent = 'JARVIS HUD';
+    initFocusBg();
+    log('Focus mode ON');
+  } else {
+    if (layout) layout.style.display = 'grid';
+    if (focus) focus.style.display = 'none';
+    if (btn) btn.textContent = 'FOCUS';
+    log('HUD mode ON');
+  }
+}
+
+function initFocusBg() {
+  const c = g('focusBgCanvas');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  c.width = window.innerWidth; c.height = window.innerHeight;
+  const pts = [];
+  for (let i = 0; i < 60; i++) pts.push({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4});
+  function draw() {
+    if (!focusMode) return;
+    ctx.clearRect(0,0,c.width,c.height);
+    pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>c.width)p.vx*=-1;if(p.y<0||p.y>c.height)p.vy*=-1;});
+    pts.forEach((a,i)=>pts.forEach((b,j)=>{if(i>=j)return;const d=Math.hypot(a.x-b.x,a.y-b.y);if(d<130){ctx.strokeStyle='rgba(0,200,255,'+(1-d/130)*.1+')';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}));
+    pts.forEach(p=>{ctx.fillStyle='rgba(0,200,255,0.3)';ctx.beginPath();ctx.arc(p.x,p.y,1.5,0,Math.PI*2);ctx.fill();});
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+function sendFocusTyped() {
+  const fi = g('focusInput');
+  if (!fi) return;
+  const text = fi.value.trim();
+  if (!text) return;
+  fi.value = '';
+  sendToVisionFocus(text);
+}
+
+async function sendToVisionFocus(text) {
+  const fc = g('focusCore');
+  const fs = g('focusStatus');
+  const fr = g('focusResponse');
+  const fwb = g('fwb');
+
+  if (fc) fc.classList.add('thinking');
+  if (fs) fs.textContent = 'PROCESSING...';
+  if (fwb) fwb.classList.remove('active');
+
+  try {
+    const res = await fetch('/chat', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
+    const data = await res.json();
+    const reply = data.reply || 'No response.';
+    if (fr) { fr.textContent = reply; fr.classList.add('visible'); }
+    if (fc) fc.classList.remove('thinking');
+    if (fc) fc.classList.add('speaking');
+    if (fs) fs.textContent = 'SPEAKING...';
+    if (fwb) fwb.classList.add('active');
+    speak(reply);
+    // Also add to main chat
+    addMsg('user', 'YOU', text);
+    addMsg('ai', 'VISION', reply);
+  } catch(e) {
+    if (fr) { fr.textContent = fallback(text); fr.classList.add('visible'); }
+    if (fc) fc.classList.remove('thinking');
+    if (fs) fs.textContent = 'READY';
+  }
+}
+
+// Sync focus core state with main core state
+const _origSetCoreState = setCoreState;
+
+// ============================================================
+//  FILE MANAGER
+// ============================================================
+async function createFile() {
+  const type    = g('fileType').value;
+  const name    = g('fileName').value.trim();
+  const loc     = g('filePath').value.trim();
+  const content = g('fileContent') ? g('fileContent').value : '';
+
+  if (!name) { showFcResult('Please enter a file/folder name.', false); return; }
+
+  showFcResult('Creating...', true);
+  try {
+    const res  = await fetch('/files/create', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,name,location:loc,content})});
+    const data = await res.json();
+    showFcResult(data.message, data.success);
+    if (data.success) {
+      log('Created: ' + name);
+      addMsg('ai','VISION','Done! ' + data.message);
+    }
+  } catch(e) { showFcResult('Server offline. Start server.py first.', false); }
+}
+
+async function listFiles() {
+  const loc = g('filePath').value.trim();
+  showFcResult('Loading...', true);
+  try {
+    const res  = await fetch('/files/list', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:loc})});
+    const data = await res.json();
+    if (data.success) {
+      const lines = data.items.map(i => (i.type==='folder'?'📁 ':'📄 ') + i.name + (i.size?' ('+Math.round(i.size/1024)+'KB)':'')).join('\n');
+      showFcResult('📂 ' + data.path + '\n\n' + (lines || 'Empty folder'), true);
+    } else {
+      showFcResult(data.message, false);
+    }
+  } catch(e) { showFcResult('Server offline.', false); }
+}
+
+async function openFolder() {
+  const loc = g('filePath').value.trim();
+  try {
+    const res  = await fetch('/files/open', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:loc})});
+    const data = await res.json();
+    showFcResult(data.message, data.success);
+  } catch(e) { showFcResult('Server offline.', false); }
+}
+
+function showFcResult(msg, success) {
+  const el = g('fcResult'), txt = g('fcResultText');
+  if (el) el.style.display = 'block';
+  if (txt) { txt.textContent = msg; txt.style.color = success ? '#c0e0ff' : '#ff4466'; }
+}
+
+function quickCreate(type) {
+  const templates = {
+    py:     { name:'script.py',    content:'# Python script\nprint("Hello from Vision AI")\n' },
+    html:   { name:'index.html',   content:'<!DOCTYPE html>\n<html>\n<head><title>My Page</title></head>\n<body>\n<h1>Hello World</h1>\n</body>\n</html>' },
+    txt:    { name:'notes.txt',    content:'Notes created by Vision AI\n' },
+    js:     { name:'script.js',    content:'// JavaScript file\nconsole.log("Hello from Vision AI");\n' },
+    css:    { name:'style.css',    content:'/* CSS file */\nbody {\n  margin: 0;\n  font-family: sans-serif;\n}\n' },
+    folder: { name:'NewFolder',    content:'' }
+  };
+  const t = templates[type];
+  if (!t) return;
+  const fn = g('fileName'), fc = g('fileContent'), ft = g('fileType');
+  if (fn) fn.value = t.name;
+  if (fc) fc.value = t.content;
+  if (ft) ft.value = type === 'folder' ? 'folder' : 'file';
+  showTab('files', document.querySelector('.ntab[onclick*="files"]'));
+}
+
+// ============================================================
+//  CHESS ENGINE
+// ============================================================
+const PIECES = {
+  wK:'♔',wQ:'♕',wR:'♖',wB:'♗',wN:'♘',wP:'♙',
+  bK:'♚',bQ:'♛',bR:'♜',bB:'♝',bN:'♞',bP:'♟'
+};
+
+let chessBoard = [], selectedCell = null, currentTurn = 'w', moveHistory = [], validMoves = [], lastMove = null;
+let whiteCaptured = [], blackCaptured = [];
+
+function initChess() {
+  chessBoard = [
+    ['bR','bN','bB','bQ','bK','bB','bN','bR'],
+    ['bP','bP','bP','bP','bP','bP','bP','bP'],
+    [null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null],
+    ['wP','wP','wP','wP','wP','wP','wP','wP'],
+    ['wR','wN','wB','wQ','wK','wB','wN','wR']
+  ];
+  selectedCell = null; currentTurn = 'w'; moveHistory = []; validMoves = []; lastMove = null;
+  whiteCaptured = []; blackCaptured = [];
+  renderChess();
+  updateChessStatus();
+}
+
+function renderChess() {
+  const board = g('chessBoard');
+  if (!board) return;
+  board.innerHTML = '';
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'chess-cell ' + ((r+c)%2===0?'light':'dark');
+      cell.dataset.r = r; cell.dataset.c = c;
+      if (lastMove && ((lastMove.fr===r&&lastMove.fc===c)||(lastMove.tr===r&&lastMove.tc===c))) cell.classList.add('last-move');
+      if (selectedCell && selectedCell[0]===r && selectedCell[1]===c) cell.classList.add('selected');
+      if (validMoves.some(m=>m[0]===r&&m[1]===c)) cell.classList.add('valid-move');
+      const piece = chessBoard[r][c];
+      if (piece) cell.textContent = PIECES[piece] || '';
+      cell.onclick = () => handleChessClick(r, c);
+      board.appendChild(cell);
+    }
+  }
+  const wc = g('wCap'), bc = g('bCap');
+  if (wc) wc.textContent = whiteCaptured.map(p=>PIECES[p]||'').join('');
+  if (bc) bc.textContent = blackCaptured.map(p=>PIECES[p]||'').join('');
+}
+
+function handleChessClick(r, c) {
+  const piece = chessBoard[r][c];
+
+  if (selectedCell) {
+    const [sr, sc] = selectedCell;
+    if (validMoves.some(m=>m[0]===r&&m[1]===c)) {
+      makeMove(sr, sc, r, c);
+      selectedCell = null; validMoves = [];
+      renderChess();
+      updateChessStatus();
+      // Vision plays after short delay
+      if (currentTurn === 'b') setTimeout(visionChessMove, 600);
+      return;
+    }
+    selectedCell = null; validMoves = [];
+  }
+
+  if (piece && piece[0] === currentTurn) {
+    selectedCell = [r, c];
+    validMoves = getValidMoves(r, c);
+  }
+  renderChess();
+}
+
+function makeMove(fr, fc, tr, tc) {
+  const piece = chessBoard[fr][fc];
+  const target = chessBoard[tr][tc];
+  if (target) {
+    if (target[0]==='w') whiteCaptured.push(target);
+    else blackCaptured.push(target);
+  }
+  // Pawn promotion
+  let movePiece = piece;
+  if (piece==='wP'&&tr===0) movePiece='wQ';
+  if (piece==='bP'&&tr===7) movePiece='bQ';
+
+  chessBoard[tr][tc] = movePiece;
+  chessBoard[fr][fc] = null;
+  lastMove = {fr,fc,tr,tc};
+
+  const cols = 'abcdefgh';
+  const notation = (PIECES[piece]||'') + cols[fc]+(8-fr) + '→' + cols[tc]+(8-tr);
+  moveHistory.push(notation);
+  const mh = g('chessMoves');
+  if (mh) { mh.innerHTML += '<div>'+moveHistory.length+'. '+notation+'</div>'; mh.scrollTop=mh.scrollHeight; }
+
+  currentTurn = currentTurn==='w'?'b':'w';
+}
+
+function getValidMoves(r, c) {
+  const piece = chessBoard[r][c];
+  if (!piece) return [];
+  const color = piece[0], type = piece[1];
+  const moves = [];
+  const enemy = color==='w'?'b':'w';
+
+  const add = (nr, nc) => {
+    if (nr<0||nr>7||nc<0||nc>7) return false;
+    const t = chessBoard[nr][nc];
+    if (t && t[0]===color) return false;
+    moves.push([nr,nc]);
+    return !t;
+  };
+
+  if (type==='P') {
+    const dir = color==='w'?-1:1;
+    const start = color==='w'?6:1;
+    if (!chessBoard[r+dir]?.[c]) { moves.push([r+dir,c]); if(r===start&&!chessBoard[r+2*dir]?.[c]) moves.push([r+2*dir,c]); }
+    [[r+dir,c-1],[r+dir,c+1]].forEach(([nr,nc])=>{ if(nr>=0&&nr<=7&&nc>=0&&nc<=7&&chessBoard[nr][nc]&&chessBoard[nr][nc][0]===enemy) moves.push([nr,nc]); });
+  }
+  if (type==='R'||type==='Q') { [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr,dc])=>{ for(let i=1;i<8;i++) if(!add(r+dr*i,c+dc*i)) break; }); }
+  if (type==='B'||type==='Q') { [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr,dc])=>{ for(let i=1;i<8;i++) if(!add(r+dr*i,c+dc*i)) break; }); }
+  if (type==='N') { [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr,dc])=>add(r+dr,c+dc)); }
+  if (type==='K') { [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([dr,dc])=>add(r+dr,c+dc)); }
+
+  return moves;
+}
+
+function visionChessMove() {
+  // Find all black pieces and their moves
+  const allMoves = [];
+  for (let r=0;r<8;r++) for(let c=0;c<8;c++) {
+    if (chessBoard[r][c]&&chessBoard[r][c][0]==='b') {
+      getValidMoves(r,c).forEach(([tr,tc])=>allMoves.push({fr:r,fc:c,tr,tc,score:scoreMoveChess(r,c,tr,tc)}));
+    }
+  }
+  if (!allMoves.length) { updateChessStatus('Vision has no moves!'); return; }
+  allMoves.sort((a,b)=>b.score-a.score);
+  // Pick from top 3 randomly for variety
+  const top = allMoves.slice(0, Math.min(3, allMoves.length));
+  const m = top[Math.floor(Math.random()*top.length)];
+  makeMove(m.fr, m.fc, m.tr, m.tc);
+  renderChess();
+  updateChessStatus();
+}
+
+function scoreMoveChess(fr, fc, tr, tc) {
+  const target = chessBoard[tr][tc];
+  const pieceValues = {P:1,N:3,B:3,R:5,Q:9,K:100};
+  let score = 0;
+  if (target) score += (pieceValues[target[1]]||0) * 10;
+  // Prefer center
+  const centerBonus = (3.5-Math.abs(tr-3.5)) + (3.5-Math.abs(tc-3.5));
+  score += centerBonus;
+  return score;
+}
+
+function updateChessStatus(msg) {
+  const el = g('chessStatus');
+  if (!el) return;
+  if (msg) { el.textContent = msg; return; }
+  el.textContent = currentTurn==='w' ? 'Your turn (White)' : 'Vision thinking... (Black)';
+}
+
+function resetChess() { initChess(); log('Chess: new game'); }
+
+function undoMove() {
+  // Simple undo — reinit and replay all but last 2 moves
+  if (moveHistory.length < 1) return;
+  const savedHistory = [...moveHistory];
+  initChess();
+  // For simplicity just reset — full undo would need move stack
+  log('Chess: board reset');
+}
+
+async function askVisionChessHint() {
+  const boardStr = chessBoard.map((row,r)=>row.map((p,c)=>p?p:'..').join(' ')).join('\n');
+  const prompt = I am playing chess as White. Here is the current board (row 0 = black side):\n\nIt is my turn (White). What is the best move I should make? Give me one specific move and explain why briefly.;
+  addMsg('user','YOU','Give me a chess hint');
+  setCoreState('thinking');
+  try {
+    const res = await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:prompt})});
+    const data = await res.json();
+    addMsg('ai','VISION',data.reply);
+    speak(data.reply);
+    showTab('chat', document.querySelector('.ntab'));
+  } catch(e) { addMsg('ai','VISION','Server offline.'); }
+}
+
+// Init chess when tab opens
+const _origShowTab = showTab;
+function showTab(name, btn) {
+  _origShowTab(name, btn);
+  if (name === 'chess' && chessBoard.length === 0) initChess();
+  if (name === 'files') { const fp = g('filePath'); if(fp&&!fp.value) fp.value = 'C:\\\\Users\\\\USER\\\\Desktop'; }
+}

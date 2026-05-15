@@ -69,8 +69,40 @@
       <div class="topbar-pill green" id="micStatus">🎤 MIC READY</div>
       <div class="topbar-stat" id="tbBatt">🔋 --%</div>
       <div class="topbar-stat" id="tbLat">⚡ --ms</div>
+      <button class="mode-toggle-btn" id="modeToggleBtn" onclick="toggleMode()">⊙ FOCUS</button>
     </div>
   </header>
+
+  <!-- FOCUS MODE (big circle) -->
+  <div id="focusMode" class="focus-mode" style="display:none">
+    <canvas id="focusBgCanvas" class="focus-bg"></canvas>
+    <div class="focus-wrap">
+      <div class="focus-title">V I S I O N</div>
+      <div class="focus-core" id="focusCore" onclick="activateVision()">
+        <div class="focus-ring fr1"></div>
+        <div class="focus-ring fr2"></div>
+        <div class="focus-ring fr3"></div>
+        <div class="focus-body">
+          <div class="focus-eyes">
+            <div class="eye" id="feyeL"><div class="eyelid" id="felL"></div><div class="pupil" id="fpL"></div></div>
+            <div class="eye" id="feyeR"><div class="eyelid" id="felR"></div><div class="pupil" id="fpR"></div></div>
+          </div>
+          <div class="wb" id="fwb"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+          <div class="focus-status" id="focusStatus">CLICK TO WAKE</div>
+        </div>
+      </div>
+      <div class="focus-response" id="focusResponse"></div>
+      <div class="focus-input">
+        <input type="text" id="focusInput" placeholder="Type to Vision..." onkeydown="if(event.key==='Enter')sendFocusTyped()"/>
+        <button onclick="sendFocusTyped()">▶</button>
+      </div>
+      <div class="focus-btns">
+        <button class="fb" id="fmicBtn" onclick="toggleListening()">🎤 SPEAK</button>
+        <button class="fb" id="fmuteBtn" onclick="toggleMute()">🔊 SOUND</button>
+        <button class="fb" onclick="toggleMode()">⊞ FULL HUD</button>
+      </div>
+    </div>
+  </div>
 
   <!-- MAIN LAYOUT: 3 columns -->
   <div class="layout">
@@ -147,6 +179,8 @@
         <button class="ntab" onclick="showTab('memory',this)">🧠 MEMORY</button>
         <button class="ntab" onclick="showTab('code',this)">💻 CODE</button>
         <button class="ntab" onclick="showTab('notes',this)">📝 NOTES</button>
+        <button class="ntab" onclick="showTab('files',this)">📁 FILES</button>
+        <button class="ntab" onclick="showTab('chess',this)">♟ CHESS</button>
       </nav>
 
       <!-- TAB: CHAT -->
@@ -376,6 +410,88 @@
             <button class="action-btn" onclick="clearNote()">🗑 CLEAR</button>
           </div>
           <textarea id="notepad" class="notepad" placeholder="Type notes here... Vision can read these if you ask."></textarea>
+        </div>
+      </div>
+
+      <!-- TAB: FILES -->
+      <div class="tab" id="tab-files">
+        <div class="files-wrap">
+          <div class="files-header">
+            <div class="card-title">◈ VISION FILE MANAGER</div>
+            <div class="files-sub">Create files and folders on your laptop</div>
+          </div>
+          <div class="files-create">
+            <div class="fc-row">
+              <span class="fc-label">TYPE</span>
+              <select id="fileType" class="fc-select">
+                <option value="file">📄 File</option>
+                <option value="folder">📁 Folder</option>
+              </select>
+            </div>
+            <div class="fc-row">
+              <span class="fc-label">NAME</span>
+              <input type="text" id="fileName" class="fc-input" placeholder="e.g. notes.txt or MyProject"/>
+            </div>
+            <div class="fc-row">
+              <span class="fc-label">LOCATION</span>
+              <input type="text" id="filePath" class="fc-input" placeholder="e.g. C:\Users\USER\Desktop"/>
+            </div>
+            <div class="fc-row" id="fileContentRow">
+              <span class="fc-label">CONTENT</span>
+              <textarea id="fileContent" class="fc-textarea" placeholder="File content (optional)..."></textarea>
+            </div>
+            <div class="fc-actions">
+              <button class="action-btn" onclick="createFile()">⚡ CREATE</button>
+              <button class="action-btn" onclick="openFolder()">📂 OPEN FOLDER</button>
+              <button class="action-btn" onclick="listFiles()">📋 LIST FILES</button>
+            </div>
+          </div>
+          <div class="fc-result" id="fcResult" style="display:none">
+            <div class="card-title">◈ RESULT</div>
+            <div id="fcResultText" class="fc-result-text"></div>
+          </div>
+          <div class="fc-quick">
+            <div class="card-title">◈ QUICK CREATE</div>
+            <div class="fc-quick-grid">
+              <button class="fc-qbtn" onclick="quickCreate('py')">🐍 Python Script</button>
+              <button class="fc-qbtn" onclick="quickCreate('html')">🌐 HTML Page</button>
+              <button class="fc-qbtn" onclick="quickCreate('txt')">📝 Text File</button>
+              <button class="fc-qbtn" onclick="quickCreate('js')">⚡ JavaScript</button>
+              <button class="fc-qbtn" onclick="quickCreate('css')">🎨 CSS File</button>
+              <button class="fc-qbtn" onclick="quickCreate('folder')">📁 New Folder</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: CHESS -->
+      <div class="tab" id="tab-chess">
+        <div class="chess-wrap">
+          <div class="chess-header">
+            <div class="card-title">◈ VISION CHESS</div>
+            <div class="chess-info">
+              <span id="chessStatus" class="chess-status">Your turn (White)</span>
+              <button class="action-btn" onclick="resetChess()">🔄 NEW GAME</button>
+              <button class="action-btn" onclick="undoMove()">↩ UNDO</button>
+              <button class="action-btn" onclick="askVisionChessHint()">💡 HINT</button>
+            </div>
+          </div>
+          <div class="chess-main">
+            <div class="chess-board-wrap">
+              <div id="chessBoard" class="chess-board"></div>
+            </div>
+            <div class="chess-side">
+              <div class="chess-moves-box">
+                <div class="card-title">◈ MOVE HISTORY</div>
+                <div id="chessMoves" class="chess-moves"></div>
+              </div>
+              <div class="chess-captured">
+                <div class="card-title">◈ CAPTURED</div>
+                <div id="whiteCaptured" class="captured-row"><span>White:</span><span id="wCap"></span></div>
+                <div id="blackCaptured" class="captured-row"><span>Black:</span><span id="bCap"></span></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
