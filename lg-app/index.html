@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Vision AI</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Courier New', monospace;
+  background: radial-gradient(ellipse at 25% 20%, #001535, #000820 50%, #000510);
+  color: #8ab4cc;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  user-select: none;
+}
+/* Background grid */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: linear-gradient(rgba(0,200,255,0.05) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(0,200,255,0.05) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+}
+.app { position: relative; z-index: 1; width: 100%; height: 100%; display: flex; flex-direction: column; }
+/* HEADER */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 60px; height: 80px;
+  background: linear-gradient(90deg, rgba(0,5,18,.99), rgba(0,20,60,.97), rgba(0,5,18,.99));
+  border-bottom: 2px solid rgba(0,200,255,.5);
+  box-shadow: 0 0 40px rgba(0,120,255,.2);
+  flex-shrink: 0;
+}
+.h-left { display: flex; align-items: center; gap: 20px; }
+.h-logo {
+  width: 50px; height: 50px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #001535, #000308);
+  border: 2px solid #00eeff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; font-weight: 900; color: #00eeff;
+  box-shadow: 0 0 20px rgba(0,200,255,.5);
+}
+.h-name { font-size: 1.4rem; font-weight: 900; letter-spacing: .4rem; color: #00eeff; text-shadow: 0 0 20px #00eeff; }
+.h-sub  { font-size: .7rem; letter-spacing: .2rem; color: #1a5a7a; }
+.h-clock { font-size: 2rem; font-weight: 700; letter-spacing: .4rem; color: #00eeff; text-shadow: 0 0 25px #00eeff; }
+.h-date  { font-size: .7rem; letter-spacing: .15rem; color: #1a6a8a; text-align: center; }
+.h-right { display: flex; align-items: center; gap: 16px; }
+.pill { font-size: .7rem; letter-spacing: .12rem; padding: 6px 14px; border: 1px solid rgba(0,200,255,.35); color: #00bbdd; background: rgba(0,100,200,.1); }
+.pill.g { border-color: rgba(0,255,136,.35); color: #00cc77; background: rgba(0,200,100,.08); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="h-left">
+      <div class="h-logo">V</div>
+      <div>
+        <div class="h-name">VISION AI</div>
+        <div class="h-sub">TOMILOLA UNIT // LG TV</div>
+      </div>
+    </div>
+    <div>
+      <div class="h-clock" id="clock">00:00:00</div>
+      <div class="h-date" id="dated">---</div>
+    </div>
+    <div class="h-right">
+      <div class="pill" id="aistat">⚡ AI ONLINE</div>
+      <div class="pill g" id="connstat">📡 CONNECTED</div>
+    </div>
+  </header>
+  <div id="main"></div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

@@ -22,7 +22,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__, static_folder='.')
-CORS(app)
+CORS(app, origins=['http://localhost:5000', 'http://192.168.1.7:5000', 'http://192.168.1.11', 'null', '*'])
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 OWNER        = os.getenv("VISION_OWNER", "Tomilola")
@@ -208,9 +208,22 @@ threading.Thread(target=learn_loop, daemon=True).start()
 def index():
     return send_from_directory('.', 'index.html')
 
+@app.route('/tv-app')
+def tv_app():
+    return send_from_directory('lg-app', 'index.html')
+
+@app.route('/tv-app/<path:filename>')
+def tv_app_files(filename):
+    return send_from_directory('lg-app', filename)
+
 @app.route('/<path:filename>')
 def static_files(filename):
-    return send_from_directory('.', filename)
+    response = send_from_directory('.', filename)
+    # Never cache JS/CSS so changes always load fresh
+    if filename.endswith(('.js', '.css', '.html')):
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+    return response
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -375,6 +388,50 @@ def reset():
     return jsonify({"status": "Session cleared."})
 
 
+# ── TV Control ────────────────────────────────────────────────
+try:
+    from tv_control import (tv_volume_up, tv_volume_down, tv_set_volume, tv_mute,
+                             tv_turn_off, tv_get_volume, tv_launch_youtube,
+                             tv_launch_netflix, tv_launch_browser, tv_open_url,
+                             tv_show_toast, tv_channel_up, tv_channel_down,
+                             tv_play, tv_pause, tv_get_apps, get_tv_status)
+    TV_OK = True
+except Exception as e:
+    TV_OK = False
+    print(f"[TV] Not loaded: {e}")
+
+@app.route('/tv/<command>', methods=['POST'])
+def tv_command(command):
+    if not TV_OK:
+        return jsonify({"success": False, "message": "TV control not available."})
+    data = request.get_json() or {}
+    try:
+        cmds = {
+            "volume_up":    lambda: tv_volume_up(),
+            "volume_down":  lambda: tv_volume_down(),
+            "mute":         lambda: tv_mute(True),
+            "unmute":       lambda: tv_mute(False),
+            "off":          lambda: tv_turn_off(),
+            "youtube":      lambda: tv_launch_youtube(),
+            "netflix":      lambda: tv_launch_netflix(),
+            "browser":      lambda: tv_launch_browser(),
+            "channel_up":   lambda: tv_channel_up(),
+            "channel_down": lambda: tv_channel_down(),
+            "play":         lambda: tv_play(),
+            "pause":        lambda: tv_pause(),
+            "toast":        lambda: tv_show_toast(data.get("message", "Hello from Vision AI!")),
+            "volume_set":   lambda: tv_set_volume(data.get("level", 20)),
+            "open_url":     lambda: tv_open_url(data.get("url", "https://google.com")),
+            "status":       lambda: ({"online": get_tv_status()}, True),
+        }
+        if command not in cmds:
+            return jsonify({"success": False, "message": f"Unknown command: {command}"})
+        result = cmds[command]()
+        return jsonify({"success": True, "result": str(result)})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
+
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({
@@ -502,5 +559,15 @@ if __name__ == '__main__':
     print(f"  AI: {'Groq Llama 3.1 ✓' if groq_client else 'Built-in (add GROQ_API_KEY)'}")
     print(f"  Memory: {len(memory['facts'])} facts stored")
     print(f"  Tools: Web Search, Weather, Code Exec, Math")
+    import socket
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+    except:
+        local_ip = "unknown"
+    print(f"  📺 LG TV URL: http://{local_ip}:5000/tv-app")
+    print(f"  📱 Phone URL: http://{local_ip}:5000")
     print("╚══════════════════════════════════════════════╝")
     app.run(host='0.0.0.0', port=5000, debug=False)

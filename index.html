@@ -1,18 +1,16 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <meta name="theme-color" content="#00eeff"/>
-<title>VISION AI — JARVIS</title>
+<title>VISION AI</title>
 <link rel="manifest" href="/manifest.json"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-
-<!-- LOCK SCREEN -->
 <div id="lockScreen" class="lock">
   <canvas id="lockCanvas" class="lock-canvas"></canvas>
   <div class="lock-content">
@@ -27,7 +25,7 @@
     <div class="lock-sub">AUTHORIZED ACCESS ONLY</div>
     <div class="lock-field">
       <div class="lock-field-label">ACCESS CODE</div>
-      <input type="password" id="codeInput" placeholder="▮▮▮▮▮▮▮▮▮▮▮▮" maxlength="20" onkeydown="if(event.key==='Enter')checkCode()"/>
+      <input type="password" id="codeInput" placeholder="Enter access code" maxlength="20" onkeydown="if(event.key==='Enter')checkCode()"/>
       <div class="lock-field-line"></div>
     </div>
     <button class="lock-btn" onclick="checkCode()">
@@ -35,18 +33,39 @@
       <div class="lock-btn-scan"></div>
     </button>
     <div class="lock-error" id="lockError"></div>
-    <div class="lock-hint">Vision2026Tomi</div>
+    <div class="lock-hint">AnneTomi2</div>
   </div>
 </div>
-
-<!-- MAIN APP -->
 <div id="app" class="app" style="display:none">
-
-  <!-- Animated background -->
   <canvas id="bgCanvas" class="bg-canvas"></canvas>
   <div class="bg-overlay"></div>
-
-  <!-- TOP BAR -->
+  <div id="focusMode" class="focus-mode" style="display:none">
+    <canvas id="focusBgCanvas" class="focus-bg"></canvas>
+    <div class="focus-wrap">
+      <div class="focus-title">V I S I O N</div>
+      <div class="focus-core" id="focusCore" onclick="activateVision()">
+        <div class="focus-ring fr1"></div><div class="focus-ring fr2"></div><div class="focus-ring fr3"></div>
+        <div class="focus-body">
+          <div class="focus-eyes">
+            <div class="eye" id="feyeL"><div class="eyelid" id="felL"></div><div class="pupil" id="fpL"></div></div>
+            <div class="eye" id="feyeR"><div class="eyelid" id="felR"></div><div class="pupil" id="fpR"></div></div>
+          </div>
+          <div class="wb" id="fwb"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+          <div class="focus-status" id="focusStatus">CLICK TO WAKE</div>
+        </div>
+      </div>
+      <div class="focus-response" id="focusResponse"></div>
+      <div class="focus-input">
+        <input type="text" id="focusInput" placeholder="Type to Vision..." onkeydown="if(event.key==='Enter')sendFocusTyped()"/>
+        <button onclick="sendFocusTyped()">&#9654;</button>
+      </div>
+      <div class="focus-btns">
+        <button class="fb" id="fmicBtn" onclick="toggleListening()">&#127908; SPEAK</button>
+        <button class="fb" id="fmuteBtn" onclick="toggleMute()">&#128266; SOUND</button>
+        <button class="fb" onclick="toggleMode()">&#10063; FULL HUD</button>
+      </div>
+    </div>
+  </div>
   <header class="topbar">
     <div class="topbar-left">
       <div class="topbar-logo">
@@ -65,517 +84,371 @@
       <div class="topbar-date" id="dateDisp">---</div>
     </div>
     <div class="topbar-right">
-      <div class="topbar-pill" id="aiStatus">⚡ AI ONLINE</div>
-      <div class="topbar-pill green" id="micStatus">🎤 MIC READY</div>
-      <div class="topbar-stat" id="tbBatt">🔋 --%</div>
-      <div class="topbar-stat" id="tbLat">⚡ --ms</div>
-      <button class="mode-toggle-btn" id="modeToggleBtn" onclick="toggleMode()">⊙ FOCUS</button>
+      <div class="topbar-pill" id="aiStatus">&#9889; AI ONLINE</div>
+      <div class="topbar-pill green" id="micStatus">&#127908; MIC READY</div>
+      <div class="topbar-stat" id="tbBatt">&#128267; --%</div>
+      <div class="topbar-stat" id="tbLat">&#9889; --ms</div>
+      <button class="mode-toggle-btn" id="modeToggleBtn" onclick="toggleMode()">&#8857; FOCUS</button>
     </div>
   </header>
-
-  <!-- FOCUS MODE (big circle) -->
-  <div id="focusMode" class="focus-mode" style="display:none">
-    <canvas id="focusBgCanvas" class="focus-bg"></canvas>
-    <div class="focus-wrap">
-      <div class="focus-title">V I S I O N</div>
-      <div class="focus-core" id="focusCore" onclick="activateVision()">
-        <div class="focus-ring fr1"></div>
-        <div class="focus-ring fr2"></div>
-        <div class="focus-ring fr3"></div>
-        <div class="focus-body">
-          <div class="focus-eyes">
-            <div class="eye" id="feyeL"><div class="eyelid" id="felL"></div><div class="pupil" id="fpL"></div></div>
-            <div class="eye" id="feyeR"><div class="eyelid" id="felR"></div><div class="pupil" id="fpR"></div></div>
-          </div>
-          <div class="wb" id="fwb"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-          <div class="focus-status" id="focusStatus">CLICK TO WAKE</div>
-        </div>
-      </div>
-      <div class="focus-response" id="focusResponse"></div>
-      <div class="focus-input">
-        <input type="text" id="focusInput" placeholder="Type to Vision..." onkeydown="if(event.key==='Enter')sendFocusTyped()"/>
-        <button onclick="sendFocusTyped()">▶</button>
-      </div>
-      <div class="focus-btns">
-        <button class="fb" id="fmicBtn" onclick="toggleListening()">🎤 SPEAK</button>
-        <button class="fb" id="fmuteBtn" onclick="toggleMute()">🔊 SOUND</button>
-        <button class="fb" onclick="toggleMode()">⊞ FULL HUD</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MAIN LAYOUT: 3 columns -->
   <div class="layout">
-
-    <!-- LEFT PANEL -->
     <aside class="panel-left">
-
-      <!-- Vision Core -->
       <div class="core-section">
         <div class="core-wrap" id="visionCore" onclick="activateVision()">
-          <div class="core-ring r1"></div>
-          <div class="core-ring r2"></div>
-          <div class="core-ring r3"></div>
+          <div class="core-ring r1"></div><div class="core-ring r2"></div><div class="core-ring r3"></div>
           <div class="core-body">
             <div class="core-eyes">
               <div class="eye" id="eyeL"><div class="eyelid" id="elidL"></div><div class="pupil" id="pupL"></div></div>
               <div class="eye" id="eyeR"><div class="eyelid" id="elidR"></div><div class="pupil" id="pupR"></div></div>
             </div>
-            <div class="core-bars" id="waveBars">
-              <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-            </div>
+            <div class="core-bars" id="waveBars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
             <div class="core-status" id="coreStatus">STANDBY</div>
           </div>
         </div>
         <div class="core-btns">
-          <button class="cbtn" id="micBtn" onclick="toggleListening()" title="Mic">🎤</button>
-          <button class="cbtn" id="typeBtn" onclick="toggleTyping()" title="Type">⌨</button>
-          <button class="cbtn" id="muteBtn" onclick="toggleMute()" title="Mute">🔊</button>
-          <button class="cbtn" onclick="openHelp()" title="Help">❓</button>
+          <button class="cbtn" id="micBtn" onclick="toggleListening()">MIC</button>
+          <button class="cbtn" id="typeBtn" onclick="toggleTyping()">TYPE</button>
+          <button class="cbtn" id="muteBtn" onclick="toggleMute()">MUTE</button>
+          <button class="cbtn" onclick="openHelp()">HELP</button>
         </div>
       </div>
-
-      <!-- Vitals -->
       <div class="card">
-        <div class="card-title">◈ SYSTEM VITALS</div>
-        <div class="stat-row"><span>CPU TEMP</span><span class="sv cyan" id="cpuTemp">--°C</span></div>
+        <div class="card-title">&#9672; SYSTEM VITALS</div>
+        <div class="stat-row"><span>CPU</span><span class="sv cyan" id="cpuTemp">--C</span></div>
         <div class="bar-wrap"><div class="bar cyan" id="cpuBar" style="width:0%"></div></div>
-        <div class="stat-row"><span>HAND TEMP</span><span class="sv orange" id="handTemp">--°C</span></div>
+        <div class="stat-row"><span>HAND</span><span class="sv orange" id="handTemp">--C</span></div>
         <div class="bar-wrap"><div class="bar orange" id="handBar" style="width:0%"></div></div>
         <div class="stat-row"><span>BATTERY</span><span class="sv green" id="battPct">--%</span></div>
         <div class="bar-wrap"><div class="bar green" id="battBar" style="width:0%"></div></div>
         <div class="stat-row"><span>MEMORY</span><span class="sv purple" id="heapMem">--MB</span></div>
         <div class="bar-wrap"><div class="bar purple" id="heapBar" style="width:0%"></div></div>
       </div>
-
-      <!-- Mouse tracker -->
       <div class="card">
-        <div class="card-title">◈ INPUT TRACKER</div>
-        <div class="stat-row"><span>POSITION</span><span class="sv cyan" id="mxy">0 / 0</span></div>
-        <div class="stat-row"><span>VELOCITY</span><span class="sv green" id="mvel">0 px/s</span></div>
-        <div class="stat-row"><span>ACTIVITY</span><span class="sv orange" id="mact">IDLE</span></div>
-        <div class="radar-box">
-          <div class="radar-inner">
-            <div class="radar-sweep"></div>
-            <div class="radar-dot" id="radarDot"></div>
-            <div class="radar-ring"></div>
-            <div class="radar-ring r2"></div>
-          </div>
-        </div>
+        <div class="card-title">&#9672; INPUT TRACKER</div>
+        <div class="stat-row"><span>POS</span><span class="sv cyan" id="mxy">0/0</span></div>
+        <div class="stat-row"><span>VEL</span><span class="sv green" id="mvel">0px/s</span></div>
+        <div class="stat-row"><span>ACT</span><span class="sv orange" id="mact">IDLE</span></div>
+        <div class="radar-box"><div class="radar-inner"><div class="radar-ring"></div><div class="radar-ring r2"></div><div class="radar-sweep"></div><div class="radar-dot" id="radarDot"></div></div></div>
       </div>
-
     </aside>
-
-    <!-- CENTER -->
     <main class="panel-center">
-
-      <!-- Nav tabs -->
-      <nav class="nav">
-        <button class="ntab active" onclick="showTab('chat',this)">💬 CHAT</button>
-        <button class="ntab" onclick="showTab('mainframe',this)">⚡ MAINFRAME</button>
-        <button class="ntab" onclick="showTab('homework',this)">📚 HOMEWORK</button>
-        <button class="ntab" onclick="showTab('browser',this)">🌐 BROWSER</button>
-        <button class="ntab" onclick="showTab('scanner',this)">📷 SCANNER</button>
-        <button class="ntab" onclick="showTab('memory',this)">🧠 MEMORY</button>
-        <button class="ntab" onclick="showTab('code',this)">💻 CODE</button>
-        <button class="ntab" onclick="showTab('notes',this)">📝 NOTES</button>
-        <button class="ntab" onclick="showTab('files',this)">📁 FILES</button>
-        <button class="ntab" onclick="showTab('chess',this)">♟ CHESS</button>
+      <nav>
+        <button class="ntab active" onclick="showTab('chat',this)">CHAT</button>
+        <button class="ntab" onclick="showTab('mainframe',this)">MAINFRAME</button>
+        <button class="ntab" onclick="showTab('homework',this)">HOMEWORK</button>
+        <button class="ntab" onclick="showTab('browser',this)">BROWSER</button>
+        <button class="ntab" onclick="showTab('scanner',this)">SCANNER</button>
+        <button class="ntab" onclick="showTab('memory',this)">MEMORY</button>
+        <button class="ntab" onclick="showTab('code',this)">CODE</button>
+        <button class="ntab" onclick="showTab('notes',this)">NOTES</button>
+        <button class="ntab" onclick="showTab('files',this)">FILES</button>
+        <button class="ntab" onclick="showTab('chess',this)">CHESS</button>
+        <button class="ntab" onclick="showTab('screen',this)">SCREEN</button>
+        <button class="ntab" onclick="showTab('video',this)">VIDEO AI</button>
+        <button class="ntab" onclick="showTab('tv',this)">TV</button>
       </nav>
-
-      <!-- TAB: CHAT -->
       <div class="tab active" id="tab-chat">
         <div class="chat-log" id="chatMessages">
-          <div class="msg system"><span class="mwho">VISION</span><span class="mtext">System initialized. Click the core or speak to begin, Tomilola.</span></div>
+          <div class="msg system"><span class="mwho">VISION</span><span class="mtext">System ready. Click core or speak, Tomilola.</span></div>
         </div>
         <div class="chat-bottom">
           <div class="type-area" id="typeBox" style="display:none">
-            <span class="type-arrow">▶</span>
-            <input type="text" id="typeInput" placeholder="Type a command to Vision..." onkeydown="if(event.key==='Enter')sendTyped()"/>
-            <button class="send-btn" onclick="sendTyped()">SEND ▶</button>
+            <span class="type-arrow">&gt;</span>
+            <input id="typeInput" onkeydown="if(event.key==='Enter')sendTyped()"/>
+            <button class="send-btn" onclick="sendTyped()">SEND</button>
           </div>
-          <div class="voice-status" id="voiceHint">🎤 Click the circle or press SPACE to activate Vision</div>
+          <div class="voice-status" id="voiceHint">Click the circle or press SPACE to activate Vision</div>
         </div>
       </div>
-
-      <!-- TAB: MAINFRAME -->
       <div class="tab" id="tab-mainframe">
-        <div class="mf-wrap">
-          <div class="mf-top">
-            <div class="mf-card"><div class="mf-label">AI ENGINE</div><div class="mf-val cyan" id="mfAI">GROQ LLAMA 3.1</div><div class="mf-sub">ONLINE</div></div>
-            <div class="mf-card"><div class="mf-label">MEMORY CORE</div><div class="mf-val green" id="mfFacts">0 FACTS</div><div class="mf-sub">LEARNING</div></div>
-            <div class="mf-card"><div class="mf-label">UPTIME</div><div class="mf-val orange" id="mfUptime">00:00:00</div><div class="mf-sub">ACTIVE</div></div>
-            <div class="mf-card"><div class="mf-label">REQUESTS</div><div class="mf-val purple" id="mfReqs">0</div><div class="mf-sub">PROCESSED</div></div>
+        <div class="mfw">
+          <div class="mftop">
+            <div class="mfc"><div class="mfl">AI ENGINE</div><div class="mfv c" id="mfai">GROQ LLAMA 3.1</div></div>
+            <div class="mfc"><div class="mfl">MEMORY</div><div class="mfv g" id="mffacts">0 FACTS</div></div>
+            <div class="mfc"><div class="mfl">UPTIME</div><div class="mfv o" id="mfup">00:00:00</div></div>
+            <div class="mfc"><div class="mfl">REQUESTS</div><div class="mfv p" id="mfreqs">0</div></div>
           </div>
-          <div class="mf-mid">
-            <div class="mf-panel">
-              <div class="mf-panel-title">◈ LIVE DATA STREAM</div>
-              <div class="mf-stream" id="mfStream"></div>
-            </div>
-            <div class="mf-panel">
-              <div class="mf-panel-title">◈ NEURAL NETWORK</div>
-              <canvas id="neuralCanvas" class="mf-canvas"></canvas>
-              <div class="mf-mini-stats">
-                <div class="mf-mrow"><span>NEURAL LOAD</span><span class="cyan" id="mfNeural">--</span></div>
-                <div class="mf-mrow"><span>RESPONSE</span><span class="green" id="mfResp">--ms</span></div>
-                <div class="mf-mrow"><span>ACCURACY</span><span class="orange">99.7%</span></div>
-              </div>
-            </div>
-            <div class="mf-panel">
-              <div class="mf-panel-title">◈ MATRIX</div>
-              <canvas id="matrixCanvas" class="mf-canvas"></canvas>
-            </div>
+          <div class="mfmid">
+            <div class="mfp"><div class="ct">DATA STREAM</div><div id="mfstream" class="mfstream"></div></div>
+            <div class="mfp"><div class="ct">NEURAL NET</div><canvas id="nc" class="mfcanvas"></canvas></div>
+            <div class="mfp"><div class="ct">MATRIX</div><canvas id="mc" class="mfcanvas"></canvas></div>
           </div>
-          <div class="mf-bot">
-            <div class="mf-panel">
-              <div class="mf-panel-title">◈ DIAGNOSTICS</div>
-              <div class="diag-grid">
-                <div class="diag ok">VOICE <span>OK</span></div>
-                <div class="diag ok">AI CORE <span>OK</span></div>
-                <div class="diag ok">MEMORY <span>OK</span></div>
-                <div class="diag ok">CAMERA <span>STANDBY</span></div>
-                <div class="diag ok">NETWORK <span>ONLINE</span></div>
-                <div class="diag ok">SECURITY <span>LOCKED</span></div>
-              </div>
-            </div>
-            <div class="mf-panel">
-              <div class="mf-panel-title">◈ QUICK COMMANDS</div>
-              <div class="cmd-grid">
-                <button class="cmd-btn" onclick="sendToVision('What time is it?')">⏰ TIME</button>
-                <button class="cmd-btn" onclick="sendToVision('Tell me a joke')">😄 JOKE</button>
-                <button class="cmd-btn" onclick="sendToVision('What is the weather today?')">🌤 WEATHER</button>
-                <button class="cmd-btn" onclick="sendToVision('Give me a motivational quote')">💡 INSPIRE</button>
-                <button class="cmd-btn" onclick="sendToVision('What can you do?')">🤖 ABILITIES</button>
-                <button class="cmd-btn" onclick="sendToVision('Search for latest AI news')">🔍 NEWS</button>
-              </div>
-            </div>
+          <div class="mfbot">
+            <div class="mfp"><div class="ct">DIAGNOSTICS</div><div class="dgrid"><div class="dg ok">VOICE<span>OK</span></div><div class="dg ok">AI<span>OK</span></div><div class="dg ok">MEMORY<span>OK</span></div><div class="dg ok">CAMERA<span>STANDBY</span></div><div class="dg ok">NET<span>ONLINE</span></div><div class="dg ok">SEC<span>LOCKED</span></div></div></div>
+            <div class="mfp"><div class="ct">QUICK COMMANDS</div><div class="cgrid">
+              <button class="cmdb" onclick="sendToVision('What time is it?')">TIME</button>
+              <button class="cmdb" onclick="sendToVision('Tell me a joke')">JOKE</button>
+              <button class="cmdb" onclick="sendToVision('What is the weather?')">WEATHER</button>
+              <button class="cmdb" onclick="sendToVision('Give me a motivational quote')">INSPIRE</button>
+              <button class="cmdb" onclick="sendToVision('What can you do?')">ABILITIES</button>
+              <button class="cmdb" onclick="sendToVision('Search for AI news')">NEWS</button>
+            </div></div>
           </div>
         </div>
       </div>
-
-      <!-- TAB: HOMEWORK -->
       <div class="tab" id="tab-homework">
-        <div class="hw-wrap">
-          <div class="hw-header">
-            <div class="hw-title">◈ VISION HOMEWORK AI</div>
-            <div class="hw-sub">Upload image • paste text • drop file • share link</div>
+        <div class="hww">
+          <div class="hwh"><div class="hwtitle">VISION HOMEWORK AI</div><div class="hwsub">Type question | Upload image | Drop file | Paste link</div></div>
+          <div class="hwtabs">
+            <button class="ht active" onclick="switchHwTab('text',this)">TYPE</button>
+            <button class="ht" onclick="switchHwTab('image',this)">IMAGE</button>
+            <button class="ht" onclick="switchHwTab('file',this)">FILE</button>
+            <button class="ht" onclick="switchHwTab('link',this)">LINK</button>
           </div>
-          <div class="hw-tabs">
-            <button class="htab active" onclick="switchHwTab('text',this)">✏️ TYPE</button>
-            <button class="htab" onclick="switchHwTab('image',this)">🖼 IMAGE</button>
-            <button class="htab" onclick="switchHwTab('file',this)">📄 FILE</button>
-            <button class="htab" onclick="switchHwTab('link',this)">🔗 LINK</button>
-          </div>
-          <div class="hw-panel active" id="hw-text">
-            <textarea id="hwText" class="hw-textarea" placeholder="Paste your homework question here...&#10;Example: Solve for x: 2x + 5 = 13&#10;Example: Explain the causes of World War 1&#10;Example: Write a Python function that sorts a list"></textarea>
-          </div>
-          <div class="hw-panel" id="hw-image">
-            <div class="hw-drop" id="hwDrop" ondrop="handleHwDrop(event)" ondragover="event.preventDefault()" onclick="$('hwImgInput').click()">
-              <div class="hw-drop-icon">🖼</div>
-              <div class="hw-drop-text">DROP IMAGE OR CLICK TO UPLOAD</div>
-              <div class="hw-drop-sub">Take a photo of your homework — Vision will solve it</div>
-              <input type="file" id="hwImgInput" accept="image/*" style="display:none" onchange="handleHwImage(event)"/>
+          <div class="hwp active" id="hw-text"><textarea id="hwt" class="hwta" placeholder="Paste homework question here..."></textarea></div>
+          <div class="hwp" id="hw-image">
+            <div class="hwdrop" ondrop="handleHwDrop(event)" ondragover="event.preventDefault()" onclick="document.getElementById('hwii').click()">
+              <div>DROP IMAGE OR CLICK TO UPLOAD</div><div class="hwdsub">Vision will solve it</div>
+              <input type="file" id="hwii" accept="image/*" style="display:none" onchange="handleHwImage(event)"/>
             </div>
-            <img id="hwImgPreview" style="display:none;max-width:100%;max-height:180px;border:1px solid rgba(0,200,255,0.3);margin-top:8px"/>
+            <img id="hwprev" style="display:none;max-width:100%;max-height:160px;margin-top:8px"/>
           </div>
-          <div class="hw-panel" id="hw-file">
-            <div class="hw-drop" onclick="$('hwFileInput').click()">
-              <div class="hw-drop-icon">📄</div>
-              <div class="hw-drop-text">CLICK TO UPLOAD FILE</div>
-              <div class="hw-drop-sub">.txt .py .js .html .css .csv .json .md</div>
-              <input type="file" id="hwFileInput" accept=".txt,.py,.js,.html,.css,.csv,.json,.md" style="display:none" onchange="handleHwFile(event)"/>
+          <div class="hwp" id="hw-file">
+            <div class="hwdrop" onclick="document.getElementById('hwfi').click()">
+              <div>CLICK TO UPLOAD FILE</div><div class="hwdsub">.txt .py .js .html .csv .json</div>
+              <input type="file" id="hwfi" accept=".txt,.py,.js,.html,.css,.csv,.json,.md" style="display:none" onchange="handleHwFile(event)"/>
             </div>
-            <div id="hwFileContent" class="hw-file-preview" style="display:none"></div>
+            <div id="hwfc" style="display:none;background:rgba(0,3,10,.95);border:1px solid rgba(0,200,255,.15);padding:10px;font-size:.75rem;color:#0f0;max-height:120px;overflow-y:auto;white-space:pre-wrap"></div>
           </div>
-          <div class="hw-panel" id="hw-link">
-            <div class="hw-link-row">
-              <span>🔗</span>
-              <input type="text" id="hwLink" class="hw-link-input" placeholder="Paste a URL or YouTube link..."/>
-            </div>
+          <div class="hwp" id="hw-link"><div class="hwlrow"><span>LINK:</span><input id="hwl" class="hwli" placeholder="Paste URL..."/></div></div>
+          <div class="hwsubj">
+            <span>SUBJECT:</span>
+            <button class="hs active" onclick="setSubject('auto',this)">AUTO</button>
+            <button class="hs" onclick="setSubject('math',this)">MATH</button>
+            <button class="hs" onclick="setSubject('science',this)">SCIENCE</button>
+            <button class="hs" onclick="setSubject('english',this)">ENGLISH</button>
+            <button class="hs" onclick="setSubject('history',this)">HISTORY</button>
+            <button class="hs" onclick="setSubject('code',this)">CODE</button>
           </div>
-          <div class="hw-subjects">
-            <span class="hw-subj-label">SUBJECT:</span>
-            <button class="hsubj active" onclick="setSubject('auto',this)">🤖 AUTO</button>
-            <button class="hsubj" onclick="setSubject('math',this)">🔢 MATH</button>
-            <button class="hsubj" onclick="setSubject('science',this)">🔬 SCIENCE</button>
-            <button class="hsubj" onclick="setSubject('english',this)">📖 ENGLISH</button>
-            <button class="hsubj" onclick="setSubject('history',this)">🏛 HISTORY</button>
-            <button class="hsubj" onclick="setSubject('code',this)">💻 CODING</button>
+          <div class="hwact">
+            <button class="hb solve" onclick="solveHomework()">SOLVE</button>
+            <button class="hb explain" onclick="explainHomework()">EXPLAIN</button>
+            <button class="hb check" onclick="checkHomework()">CHECK</button>
+            <button class="hb clear" onclick="clearHomework()">CLEAR</button>
           </div>
-          <div class="hw-actions">
-            <button class="hbtn solve" onclick="solveHomework()">⚡ SOLVE</button>
-            <button class="hbtn explain" onclick="explainHomework()">📖 EXPLAIN</button>
-            <button class="hbtn check" onclick="checkHomework()">✅ CHECK</button>
-            <button class="hbtn clear" onclick="clearHomework()">🗑 CLEAR</button>
-          </div>
-          <div class="hw-answer" id="hwAnswer" style="display:none">
-            <div class="hw-answer-top">
-              <span class="card-title">◈ VISION ANSWER</span>
-              <button class="cbtn" onclick="copyAnswer()">📋 COPY</button>
-              <button class="cbtn" onclick="speakAnswer()">🔊 READ</button>
-            </div>
-            <div id="hwAnswerText" class="hw-answer-body"></div>
+          <div id="hwa" class="hwa" style="display:none">
+            <div class="hwatop"><span class="ct">VISION ANSWER</span><button class="cbtn" onclick="copyAnswer()">COPY</button><button class="cbtn" onclick="speakAnswer()">READ</button></div>
+            <div id="hwat" class="hwat"></div>
           </div>
         </div>
       </div>
-
-      <!-- TAB: BROWSER -->
       <div class="tab" id="tab-browser">
-        <div class="browser-wrap">
-          <div class="browser-bar">
-            <button class="bbtn" onclick="browserBack()">◀</button>
-            <button class="bbtn" onclick="browserForward()">▶</button>
-            <button class="bbtn" onclick="browserRefresh()">⟳</button>
-            <div class="url-wrap">
-              <span class="url-lock">🔒</span>
-              <input type="text" id="browserUrl" class="url-input" placeholder="Enter URL or search..." onkeydown="if(event.key==='Enter')browserGo()"/>
-            </div>
-            <button class="go-btn" onclick="browserGo()">GO</button>
+        <div class="brw">
+          <div class="brbar">
+            <button class="bb" onclick="browserBack()">&#9664;</button>
+            <button class="bb" onclick="browserForward()">&#9654;</button>
+            <button class="bb" onclick="browserRefresh()">&#8635;</button>
+            <div class="urlw"><input id="burl" class="urli" placeholder="URL or search..." onkeydown="if(event.key==='Enter')browserGo()"/></div>
+            <button class="bgo" onclick="browserGo()">GO</button>
           </div>
-          <div class="browser-shortcuts">
-            <button class="sc-btn" onclick="loadUrl('https://google.com')">Google</button>
-            <button class="sc-btn" onclick="loadUrl('https://youtube.com')">YouTube</button>
-            <button class="sc-btn" onclick="loadUrl('https://discord.com/app')">Discord</button>
-            <button class="sc-btn" onclick="loadUrl('https://github.com')">GitHub</button>
-            <button class="sc-btn" onclick="loadUrl('https://reddit.com')">Reddit</button>
-            <button class="sc-btn" onclick="loadUrl('https://twitter.com')">Twitter/X</button>
+          <div class="brsc">
+            <button onclick="loadUrl('https://google.com')">Google</button>
+            <button onclick="loadUrl('https://youtube.com')">YouTube</button>
+            <button class="vision-sc-btn" onclick="showTab('chat',document.querySelector('.ntab'))">&#9889; VISION AI</button>
+            <button onclick="loadUrl('https://discord.com/app')">Discord</button>
+            <button onclick="loadUrl('https://github.com')">GitHub</button>
+            <button onclick="loadUrl('https://reddit.com')">Reddit</button>
+            <button onclick="loadUrl('https://twitter.com')">Twitter/X</button>
           </div>
-          <div class="browser-frame-wrap">
-            <iframe id="browserFrame" class="browser-frame" src="about:blank" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation"></iframe>
-            <div class="browser-blocked" id="browserBlocked" style="display:none">
-              <div class="blocked-icon">🔒</div>
-              <div class="blocked-title">SITE BLOCKED EMBEDDING</div>
-              <div class="blocked-msg">Opening in new tab...</div>
-            </div>
+          <div class="brfw">
+            <iframe id="brf" class="brf" src="about:blank" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation"></iframe>
+            <div id="brbl" style="display:none;position:absolute;inset:0;background:rgba(0,3,12,.96);flex-direction:column;align-items:center;justify-content:center;gap:10px"><div style="font-size:2rem">BLOCKED</div><div style="font-size:.75rem;color:#ff8800">Site opened in new tab</div></div>
           </div>
         </div>
       </div>
-
-      <!-- TAB: SCANNER -->
       <div class="tab" id="tab-scanner">
-        <div class="scanner-wrap">
-          <div class="scanner-view">
-            <video id="cameraFeed" autoplay playsinline muted></video>
-            <div class="scan-overlay">
-              <div class="scan-line" id="scanLine"></div>
-              <div class="sc-corner tl"></div><div class="sc-corner tr"></div>
-              <div class="sc-corner bl"></div><div class="sc-corner br"></div>
-              <div class="scan-cross"></div>
-            </div>
-            <div class="cam-off" id="camOff">SCANNER OFFLINE<br><small>Click ACTIVATE</small></div>
+        <div class="scw">
+          <div class="scv">
+            <video id="camfeed" autoplay playsinline muted></video>
+            <div class="scov"><div class="scl" id="scl"></div><div class="scc tl"></div><div class="scc tr"></div><div class="scc bl"></div><div class="scc br"></div></div>
+            <div id="camoff" class="camoff">SCANNER OFFLINE<br/><small>Click ACTIVATE</small></div>
           </div>
-          <div class="scanner-controls">
-            <button class="action-btn" id="camBtn" onclick="toggleCamera()">⚡ ACTIVATE SCANNER</button>
-            <button class="action-btn" onclick="analyzeScene()">🔍 ANALYZE SCENE</button>
-            <button class="action-btn" onclick="captureSnapshot()">📸 SNAPSHOT</button>
+          <div class="scctrl">
+            <button class="ab" id="camBtn" onclick="toggleCamera()">ACTIVATE SCANNER</button>
+            <button class="ab" onclick="analyzeScene()">ANALYZE SCENE</button>
+            <button class="ab" onclick="captureSnapshot()">SNAPSHOT</button>
           </div>
-          <div class="scan-result" id="scanResult">
-            <div class="card-title">◈ SCAN ANALYSIS</div>
-            <p id="scanResultText">No analysis yet. Activate scanner and click Analyze Scene.</p>
-          </div>
+          <div class="scres"><div class="ct">SCAN ANALYSIS</div><p id="scrt">No analysis yet.</p></div>
         </div>
       </div>
-
-      <!-- TAB: MEMORY -->
       <div class="tab" id="tab-memory">
-        <div class="memory-wrap">
-          <div class="mem-stats-box" id="memStats">Loading memory core...</div>
-          <div class="mem-facts-list" id="memFacts"></div>
-        </div>
+        <div class="memw"><div id="memst" class="memst">Loading...</div><div id="memfl" class="memfl"></div></div>
       </div>
-
-      <!-- TAB: CODE -->
       <div class="tab" id="tab-code">
-        <div class="code-wrap">
-          <div class="code-toolbar">
-            <span class="card-title">◈ CODE EXECUTOR</span>
-            <button class="action-btn" onclick="runCode()">▶ RUN</button>
-            <button class="action-btn" onclick="clearCode()">🗑 CLEAR</button>
-            <button class="action-btn" onclick="askVisionCode()">🤖 ASK VISION</button>
-          </div>
-          <textarea id="codeEditor" class="code-editor" placeholder="# Write Python code here...&#10;print('Hello from Vision AI')&#10;result = 2 ** 32&#10;print(f'2^32 = {result}')"></textarea>
-          <div class="code-out-wrap">
-            <div class="card-title">◈ OUTPUT</div>
-            <div id="codeOutput" class="code-output">Ready to execute...</div>
-          </div>
+        <div class="codew">
+          <div class="codetb"><span class="ct">CODE EXECUTOR</span><button class="ab" onclick="runCode()">RUN</button><button class="ab" onclick="clearCode()">CLEAR</button><button class="ab" onclick="askVisionCode()">ASK VISION</button></div>
+          <textarea id="ce" class="codeed" placeholder="# Python code here..."></textarea>
+          <div class="codeow"><div class="ct">OUTPUT</div><div id="co" class="codeo">Ready...</div></div>
         </div>
       </div>
-
-      <!-- TAB: NOTES -->
       <div class="tab" id="tab-notes">
-        <div class="notes-wrap">
-          <div class="notes-toolbar">
-            <span class="card-title">◈ VISION NOTEPAD</span>
-            <button class="action-btn" onclick="saveNote()">💾 SAVE</button>
-            <button class="action-btn" onclick="clearNote()">🗑 CLEAR</button>
-          </div>
-          <textarea id="notepad" class="notepad" placeholder="Type notes here... Vision can read these if you ask."></textarea>
+        <div class="notew">
+          <div class="notetb"><span class="ct">NOTEPAD</span><button class="ab" onclick="saveNote()">SAVE</button><button class="ab" onclick="clearNote()">CLEAR</button></div>
+          <textarea id="np" class="notepad" placeholder="Notes..."></textarea>
         </div>
       </div>
-
-      <!-- TAB: FILES -->
       <div class="tab" id="tab-files">
         <div class="files-wrap">
-          <div class="files-header">
-            <div class="card-title">◈ VISION FILE MANAGER</div>
-            <div class="files-sub">Create files and folders on your laptop</div>
-          </div>
+          <div class="files-header"><div class="card-title">&#9672; VISION FILE MANAGER</div><div class="files-sub">Create files and folders on your laptop</div></div>
           <div class="files-create">
-            <div class="fc-row">
-              <span class="fc-label">TYPE</span>
-              <select id="fileType" class="fc-select">
-                <option value="file">📄 File</option>
-                <option value="folder">📁 Folder</option>
-              </select>
-            </div>
-            <div class="fc-row">
-              <span class="fc-label">NAME</span>
-              <input type="text" id="fileName" class="fc-input" placeholder="e.g. notes.txt or MyProject"/>
-            </div>
-            <div class="fc-row">
-              <span class="fc-label">LOCATION</span>
-              <input type="text" id="filePath" class="fc-input" placeholder="e.g. C:\Users\USER\Desktop"/>
-            </div>
-            <div class="fc-row" id="fileContentRow">
-              <span class="fc-label">CONTENT</span>
-              <textarea id="fileContent" class="fc-textarea" placeholder="File content (optional)..."></textarea>
-            </div>
+            <div class="fc-row"><span class="fc-label">TYPE</span><select id="fileType" class="fc-select"><option value="file">File</option><option value="folder">Folder</option></select></div>
+            <div class="fc-row"><span class="fc-label">NAME</span><input type="text" id="fileName" class="fc-input" placeholder="e.g. notes.txt"/></div>
+            <div class="fc-row"><span class="fc-label">LOCATION</span><input type="text" id="filePath" class="fc-input" placeholder="e.g. C:\Users\USER\Desktop"/></div>
+            <div class="fc-row"><span class="fc-label">CONTENT</span><textarea id="fileContent" class="fc-textarea" placeholder="File content (optional)..."></textarea></div>
             <div class="fc-actions">
-              <button class="action-btn" onclick="createFile()">⚡ CREATE</button>
-              <button class="action-btn" onclick="openFolder()">📂 OPEN FOLDER</button>
-              <button class="action-btn" onclick="listFiles()">📋 LIST FILES</button>
+              <button class="action-btn" onclick="createFile()">CREATE</button>
+              <button class="action-btn" onclick="openFolder()">OPEN FOLDER</button>
+              <button class="action-btn" onclick="listFiles()">LIST FILES</button>
             </div>
           </div>
-          <div class="fc-result" id="fcResult" style="display:none">
-            <div class="card-title">◈ RESULT</div>
-            <div id="fcResultText" class="fc-result-text"></div>
-          </div>
+          <div class="fc-result" id="fcResult" style="display:none"><div class="card-title">RESULT</div><div id="fcResultText" class="fc-result-text"></div></div>
           <div class="fc-quick">
-            <div class="card-title">◈ QUICK CREATE</div>
+            <div class="card-title">&#9672; QUICK CREATE</div>
             <div class="fc-quick-grid">
-              <button class="fc-qbtn" onclick="quickCreate('py')">🐍 Python Script</button>
-              <button class="fc-qbtn" onclick="quickCreate('html')">🌐 HTML Page</button>
-              <button class="fc-qbtn" onclick="quickCreate('txt')">📝 Text File</button>
-              <button class="fc-qbtn" onclick="quickCreate('js')">⚡ JavaScript</button>
-              <button class="fc-qbtn" onclick="quickCreate('css')">🎨 CSS File</button>
-              <button class="fc-qbtn" onclick="quickCreate('folder')">📁 New Folder</button>
+              <button class="fc-qbtn" onclick="quickCreate('py')">Python Script</button>
+              <button class="fc-qbtn" onclick="quickCreate('html')">HTML Page</button>
+              <button class="fc-qbtn" onclick="quickCreate('txt')">Text File</button>
+              <button class="fc-qbtn" onclick="quickCreate('js')">JavaScript</button>
+              <button class="fc-qbtn" onclick="quickCreate('css')">CSS File</button>
+              <button class="fc-qbtn" onclick="quickCreate('folder')">New Folder</button>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- TAB: CHESS -->
       <div class="tab" id="tab-chess">
         <div class="chess-wrap">
           <div class="chess-header">
-            <div class="card-title">◈ VISION CHESS</div>
+            <div class="card-title">&#9672; VISION CHESS</div>
             <div class="chess-info">
-              <span id="chessStatus" class="chess-status">Your turn (White)</span>
-              <button class="action-btn" onclick="resetChess()">🔄 NEW GAME</button>
-              <button class="action-btn" onclick="undoMove()">↩ UNDO</button>
-              <button class="action-btn" onclick="askVisionChessHint()">💡 HINT</button>
+              <span id="chessStatus" class="chess-status">Your turn - White</span>
+              <button class="action-btn" onclick="resetChess()">NEW GAME</button>
+              <button class="action-btn" onclick="undoChess()">UNDO</button>
+              <button class="action-btn" onclick="askVisionChessTip()">VISION HINT</button>
             </div>
           </div>
           <div class="chess-main">
-            <div class="chess-board-wrap">
-              <div id="chessBoard" class="chess-board"></div>
+            <div class="chess-left">
+              <div class="chess-labels-top" id="chessLabelsTop"></div>
+              <div class="chess-row-wrap">
+                <div class="chess-labels-side" id="chessLabelsSide"></div>
+                <div id="chessBoard" class="chess-board"></div>
+              </div>
             </div>
             <div class="chess-side">
-              <div class="chess-moves-box">
-                <div class="card-title">◈ MOVE HISTORY</div>
-                <div id="chessMoves" class="chess-moves"></div>
-              </div>
-              <div class="chess-captured">
-                <div class="card-title">◈ CAPTURED</div>
-                <div id="whiteCaptured" class="captured-row"><span>White:</span><span id="wCap"></span></div>
-                <div id="blackCaptured" class="captured-row"><span>Black:</span><span id="bCap"></span></div>
-              </div>
+              <div class="chess-panel"><div class="card-title">MOVES</div><div id="chessMoves" class="chess-moves"></div></div>
+              <div class="chess-panel"><div class="card-title">CAPTURED</div><div class="captured-row"><span class="cap-label">You took:</span><span id="wCap" class="cap-pieces"></span></div><div class="captured-row"><span class="cap-label">Vision took:</span><span id="bCap" class="cap-pieces"></span></div></div>
             </div>
           </div>
         </div>
       </div>
-
+      <div class="tab" id="tab-screen">
+        <div class="screen-wrap">
+          <div class="screen-header">
+            <div class="card-title">&#9672; SCREEN SHARE</div>
+            <div class="screen-controls">
+              <button class="action-btn" id="screenShareBtn" onclick="toggleScreenShare()">START SHARING</button>
+              <button class="action-btn" onclick="analyzeScreen()">ANALYZE SCREEN</button>
+              <button class="action-btn" onclick="screenSnapshot()">SNAPSHOT</button>
+              <button class="action-btn" id="screenRecBtn" onclick="toggleScreenRecord()">RECORD</button>
+            </div>
+          </div>
+          <div class="screen-view">
+            <video id="screenFeed" class="screen-feed" autoplay muted playsinline style="display:none"></video>
+            <div class="screen-off" id="screenOff"><div class="screen-off-icon">&#128187;</div><div>SCREEN SHARE OFFLINE</div><small>Click START SHARING</small></div>
+            <div class="screen-overlay"><div class="screen-corner stl"></div><div class="screen-corner str"></div><div class="screen-corner sbl"></div><div class="screen-corner sbr"></div></div>
+          </div>
+          <div class="screen-analysis" id="screenAnalysis" style="display:none"><div class="card-title">VISION ANALYSIS</div><div id="screenAnalysisText" class="screen-analysis-text"></div></div>
+          <div class="screen-rec-status" id="screenRecStatus" style="display:none"><span class="rec-dot"></span> RECORDING - <span id="recTimer">00:00</span><button class="action-btn" onclick="stopAndDownload()">STOP &amp; SAVE</button></div>
+        </div>
+      </div>
+      <div class="tab" id="tab-video">
+        <div class="video-wrap">
+          <div class="video-header"><div class="card-title">&#9672; VIDEO AI - UNLIMITED LENGTH SCRIPTS</div><div class="video-sub">Vision writes your full video - any length, any topic</div></div>
+          <div class="video-form">
+            <div class="vf-row"><span class="vf-label">TOPIC</span><input type="text" id="videoTopic" class="vf-input" placeholder="e.g. How to make money online..."/></div>
+            <div class="vf-row"><span class="vf-label">STYLE</span><select id="videoStyle" class="vf-select"><option value="youtube">YouTube Video</option><option value="tiktok">TikTok / Short</option><option value="documentary">Documentary</option><option value="tutorial">Tutorial / How-To</option><option value="vlog">Vlog</option><option value="story">Story / Narrative</option><option value="ad">Advertisement</option></select></div>
+            <div class="vf-row"><span class="vf-label">LENGTH</span><select id="videoLength" class="vf-select"><option value="30s">30 seconds</option><option value="1min">1 minute</option><option value="3min">3 minutes</option><option value="5min">5 minutes</option><option value="10min">10 minutes</option><option value="20min">20 minutes</option><option value="unlimited">Unlimited / Full</option></select></div>
+            <div class="vf-row"><span class="vf-label">TONE</span><select id="videoTone" class="vf-select"><option value="engaging">Engaging &amp; Energetic</option><option value="professional">Professional</option><option value="funny">Funny &amp; Casual</option><option value="educational">Educational</option><option value="dramatic">Dramatic</option><option value="calm">Calm &amp; Relaxing</option></select></div>
+            <div class="vf-row"><span class="vf-label">EXTRA</span><textarea id="videoExtra" class="vf-textarea" placeholder="Any extra details..."></textarea></div>
+            <div class="video-actions">
+              <button class="vbtn generate" onclick="generateVideo()">GENERATE FULL SCRIPT</button>
+              <button class="vbtn scenes" onclick="generateScenes()">SCENE BREAKDOWN</button>
+              <button class="vbtn hooks" onclick="generateHooks()">VIRAL HOOKS</button>
+              <button class="vbtn clear" onclick="clearVideo()">CLEAR</button>
+            </div>
+          </div>
+          <div class="video-output" id="videoOutput" style="display:none">
+            <div class="video-output-header"><span class="card-title">VISION VIDEO SCRIPT</span><button class="action-btn" onclick="copyVideoScript()">COPY ALL</button><button class="action-btn" onclick="speakVideoScript()">READ ALOUD</button><button class="action-btn" onclick="continueVideo()">CONTINUE</button></div>
+            <div id="videoScriptText" class="video-script"></div>
+          </div>
+        </div>
+      </div>
+      <div class="tab" id="tab-tv">
+        <div class="tv-wrap">
+          <div class="tv-header"><div class="card-title">&#9672; LG TV CONTROL - 192.168.1.11</div><div class="tv-status-row"><span class="tv-status" id="tvStatus">CHECKING...</span><button class="action-btn" onclick="checkTvStatus()">CHECK</button></div></div>
+          <div class="tv-notice">First time: Your TV will show a pairing prompt. Accept it on the TV screen.</div>
+          <div class="tv-section"><div class="tv-section-title">POWER &amp; BASIC</div><div class="tv-grid"><button class="tv-btn red" onclick="tvCmd('off')">TURN OFF</button><button class="tv-btn" onclick="tvCmd('toast',{message:'Hello from Vision AI!'})">SEND MESSAGE</button></div></div>
+          <div class="tv-section"><div class="tv-section-title">VOLUME</div><div class="tv-grid"><button class="tv-btn" onclick="tvCmd('volume_up')">VOL UP</button><button class="tv-btn" onclick="tvCmd('volume_down')">VOL DOWN</button><button class="tv-btn" onclick="tvCmd('mute')">MUTE</button><button class="tv-btn" onclick="tvCmd('unmute')">UNMUTE</button></div><div class="tv-vol-row"><span class="vf-label">SET VOL</span><input type="range" id="tvVolSlider" min="0" max="100" value="20" class="tv-slider" oninput="document.getElementById('tvVolVal').textContent=this.value"/><span id="tvVolVal" class="sv cyan">20</span><button class="action-btn" onclick="tvCmd('volume_set',{level:parseInt(document.getElementById('tvVolSlider').value)})">SET</button></div></div>
+          <div class="tv-section"><div class="tv-section-title">LAUNCH APPS</div><div class="tv-grid"><button class="tv-btn youtube" onclick="tvCmd('youtube')">YouTube</button><button class="tv-btn netflix" onclick="tvCmd('netflix')">Netflix</button><button class="tv-btn" onclick="tvCmd('browser')">Browser</button></div></div>
+          <div class="tv-section"><div class="tv-section-title">CHANNELS &amp; PLAYBACK</div><div class="tv-grid"><button class="tv-btn" onclick="tvCmd('channel_up')">CH UP</button><button class="tv-btn" onclick="tvCmd('channel_down')">CH DOWN</button><button class="tv-btn" onclick="tvCmd('play')">PLAY</button><button class="tv-btn" onclick="tvCmd('pause')">PAUSE</button></div></div>
+          <div class="tv-section"><div class="tv-section-title">OPEN URL ON TV</div><div class="tv-url-row"><input type="text" id="tvUrlInput" class="vf-input" placeholder="https://youtube.com/watch?v=..."/><button class="action-btn" onclick="tvCmd('open_url',{url:document.getElementById('tvUrlInput').value})">OPEN ON TV</button></div></div>
+          <div class="tv-result" id="tvResult" style="display:none"><div id="tvResultText" class="fc-result-text"></div></div>
+        </div>
+      </div>
     </main>
-
-    <!-- RIGHT PANEL -->
     <aside class="panel-right">
-
-      <!-- Environment -->
       <div class="card">
-        <div class="card-title">◈ ENVIRONMENT</div>
+        <div class="card-title">&#9672; ENVIRONMENT</div>
         <div class="stat-row"><span>LOCATION</span><span class="sv cyan" id="loc">DETECTING</span></div>
         <div class="stat-row"><span>TIMEZONE</span><span class="sv" id="tz">--</span></div>
         <div class="stat-row"><span>SCREEN</span><span class="sv" id="scr">--</span></div>
         <div class="stat-row"><span>PLATFORM</span><span class="sv" id="plat">--</span></div>
-        <div class="stat-row"><span>BROWSER</span><span class="sv" id="brow">--</span></div>
       </div>
-
-      <!-- Network -->
       <div class="card">
-        <div class="card-title">◈ NETWORK</div>
-        <div class="stat-row"><span>STATUS</span><span class="sv green" id="netStat">ONLINE</span></div>
-        <div class="stat-row"><span>TYPE</span><span class="sv" id="netType">--</span></div>
-        <div class="stat-row"><span>LATENCY</span><span class="sv cyan" id="netLat">-- ms</span></div>
-        <div class="stat-row"><span>SERVER</span><span class="sv green" id="srvStat">--</span></div>
-        <canvas id="latencyCanvas" class="latency-graph"></canvas>
+        <div class="card-title">&#9672; NETWORK</div>
+        <div class="stat-row"><span>STATUS</span><span class="sv green" id="nstat">ONLINE</span></div>
+        <div class="stat-row"><span>LATENCY</span><span class="sv cyan" id="nlat">--ms</span></div>
+        <div class="stat-row"><span>SERVER</span><span class="sv green" id="sstat">--</span></div>
+        <canvas id="latc" class="latg"></canvas>
       </div>
-
-      <!-- Quick actions -->
       <div class="card">
-        <div class="card-title">◈ QUICK ACTIONS</div>
-        <div class="qa-grid">
-          <button class="qa-btn" onclick="quickAction('weather')">🌤 Weather</button>
-          <button class="qa-btn" onclick="quickAction('time')">🕐 Time</button>
-          <button class="qa-btn" onclick="quickAction('joke')">😄 Joke</button>
-          <button class="qa-btn" onclick="quickAction('news')">📰 News</button>
-          <button class="qa-btn" onclick="quickAction('math')">🔢 Math</button>
-          <button class="qa-btn" onclick="quickAction('idea')">💡 Idea</button>
+        <div class="card-title">&#9672; QUICK ACTIONS</div>
+        <div class="qgrid">
+          <button class="qb" onclick="quickAction('weather')">WEATHER</button>
+          <button class="qb" onclick="quickAction('time')">TIME</button>
+          <button class="qb" onclick="quickAction('joke')">JOKE</button>
+          <button class="qb" onclick="quickAction('news')">NEWS</button>
+          <button class="qb" onclick="quickAction('math')">MATH</button>
+          <button class="qb" onclick="quickAction('idea')">IDEA</button>
         </div>
       </div>
-
-      <!-- Activity log -->
       <div class="card">
-        <div class="card-title">◈ ACTIVITY LOG</div>
-        <div class="log-list" id="activityLog">
-          <div class="log-item">System boot complete</div>
-          <div class="log-item">Vision AI initialized</div>
-        </div>
+        <div class="card-title">&#9672; ACTIVITY LOG</div>
+        <div id="alog" class="alog"><div class="ali">System boot</div><div class="ali">Vision AI online</div></div>
       </div>
-
     </aside>
-
-  </div><!-- end layout -->
-
-  <!-- HELP PANEL -->
-  <div class="help-overlay" id="helpOverlay" onclick="closeHelp()"></div>
-  <div class="help-panel" id="helpPanel">
-    <button class="help-close" onclick="closeHelp()">✕ CLOSE</button>
-    <h2>◈ VISION COMMAND GUIDE</h2>
-    <div class="hs"><h3>🎤 Voice</h3><p>Vision listens automatically after activation. Just speak.</p></div>
-    <div class="hs"><h3>⌨️ Typing</h3><p>Press <b>T</b> or click ⌨ to type. Press Enter to send.</p></div>
-    <div class="hs"><h3>🌐 Browser</h3><p>Built-in browser. Some sites block embedding — they open in a new tab.</p></div>
-    <div class="hs"><h3>📷 Scanner</h3><p>Activate camera, then click Analyze Scene for Vision to describe what it sees.</p></div>
-    <div class="hs"><h3>📚 Homework</h3><p>Upload a photo of your homework or type the question. Vision solves it.</p></div>
-    <div class="hs"><h3>⌨️ Shortcuts</h3><p><b>Space</b> — activate<br><b>T</b> — type mode<br><b>M</b> — mute<br><b>H</b> — help<br><b>Esc</b> — close</p></div>
   </div>
-
-  <!-- Status bar -->
-  <div class="statusbar">
-    <span>VISION AI v3.0</span>
-    <span>//</span>
-    <span>TOMILOLA UNIT</span>
-    <span>//</span>
-    <span id="sbStatus">ALL SYSTEMS NOMINAL</span>
-    <span>//</span>
-    <span>GROQ LLAMA 3.1</span>
-    <span>//</span>
-    <span id="sbTime">--:--:--</span>
+  <div class="sbar">VISION AI v3.0 // TOMILOLA UNIT // <span id="sbst">ALL SYSTEMS NOMINAL</span> // GROQ LLAMA 3.1</div>
+  <div id="helpov" class="helpov" onclick="closeHelp()"></div>
+  <div id="helpp" class="helpp">
+    <button onclick="closeHelp()" style="background:rgba(255,50,80,.1);border:1px solid rgba(255,50,80,.3);color:#f55;padding:6px 14px;cursor:pointer;margin-bottom:16px">CLOSE</button>
+    <h2>VISION GUIDE</h2>
+    <p><b>SPACE</b> - Activate / Listen</p>
+    <p><b>T</b> - Type mode</p>
+    <p><b>M</b> - Mute</p>
+    <p><b>H</b> - Help</p>
+    <p><b>ESC</b> - Close</p>
+    <br/><p>Say <b>Hey Vision</b> to wake without clicking.</p>
+    <br/><p>HOMEWORK tab: upload photo of homework, Vision solves it.</p>
+    <br/><p>BROWSER tab: built-in browser with shortcuts.</p>
+    <br/><p>CHESS tab: play chess against Vision AI.</p>
+    <br/><p>SCREEN tab: share your screen with Vision.</p>
+    <br/><p>VIDEO AI tab: generate unlimited video scripts.</p>
+    <br/><p>FILES tab: create files and folders on your laptop.</p>
   </div>
-
-  <canvas id="cameraCanvas" style="display:none"></canvas>
-
-</div><!-- end app -->
-
-<script src="vision.js"></script>
+  <canvas id="camcanvas" style="display:none"></canvas>
+</div>
+<script src="vision.js?v=6"></script>
+<script src="chess.js"></script>
 </body>
 </html>

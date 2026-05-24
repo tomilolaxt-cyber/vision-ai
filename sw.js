@@ -1,25 +1,8 @@
-// Vision AI - Service Worker (PWA)
-const CACHE = 'vision-v1';
-const ASSETS = ['/', '/style.css', '/vision.js', '/manifest.json'];
-
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
-  self.skipWaiting();
-});
-
+// Vision AI - Service Worker DISABLED (cache was causing issues)
+self.addEventListener('install', e => { self.skipWaiting(); });
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-  ));
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))));
   self.clients.claim();
 });
-
-self.addEventListener('fetch', e => {
-  // Always go network-first for API calls
-  if (e.request.url.includes('/chat') || e.request.url.includes('/memory')) {
-    return;
-  }
-  e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
-  );
-});
+// No caching - always fetch fresh
+self.addEventListener('fetch', e => { e.respondWith(fetch(e.request)); });

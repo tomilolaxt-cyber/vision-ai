@@ -1,0 +1,15 @@
+{
+  "id": "com.tomilola.visionai",
+  "version": "1.0.0",
+  "vendor": "Tomilola",
+  "type": "web",
+  "main": "index.html",
+  "title": "Vision AI",
+  "icon": "icon.png",
+  "largeIcon": "icon.png",
+  "bgImage": "bg.png",
+  "splashBackground": "#000510",
+  "transparent": false,
+  "resolution": "1920x1080",
+  "requiredPermissions": ["LAUNCH", "LAUNCH_PARAMS", "AUDIO", "CAMERA"]
+}

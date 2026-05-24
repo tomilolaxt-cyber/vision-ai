@@ -13,19 +13,20 @@ let browserHistory=[],browserPos=-1,hwSubject='auto',hwImageData=null,hwFileText
 const g = id => document.getElementById(id);
 
 function checkCode(){
-  const v = g('codeInput').value.trim();
-  if(v===ACCESS_CODE){
-    const lock=g('lockScreen');
-    lock.style.opacity='0';lock.style.transition='opacity .7s';
-    setTimeout(()=>{lock.style.display='none';g('app').style.display='grid';initApp();},700);
-  } else {
-    g('lockError').textContent='ACCESS DENIED';
-    g('codeInput').value='';
-    setTimeout(()=>g('lockError').textContent='',2500);
-  }
+  // Skip lock screen - open directly
+  const lock = g('lockScreen');
+  if(lock) lock.style.display='none';
+  const app = g('app');
+  if(app) { app.style.display='grid'; initApp(); }
 }
 
-document.addEventListener('DOMContentLoaded',()=>{const c=g('codeInput');if(c)c.focus();});
+document.addEventListener('DOMContentLoaded',()=>{
+  // Auto-open Vision without password
+  const lock = g('lockScreen');
+  if(lock) lock.style.display='none';
+  const app = g('app');
+  if(app) { app.style.display='grid'; initApp(); }
+});
 
 function initApp(){
   startClock();loadVoices();setTimeout(loadVoices,600);
@@ -178,7 +179,7 @@ function speak(text){
   setTimeout(()=>{
     const u=new SpeechSynthesisUtterance(text);
     u.voice=visionVoice;u.rate=1.0;u.pitch=1.05;u.volume=1.0;
-    u.onstart=()=>{setCoreState('speaking');g('core-bars')&&g('waveBars').classList.add('active');};
+  u.onstart=()=>{setCoreState('speaking');const wb=g('waveBars');if(wb)wb.classList.add('active');const fwb=g('fwb');if(fwb)fwb.classList.add('active');};
     u.onend=u.onerror=()=>afterSpeak();
     speechSynth.speak(u);
   },100);
@@ -318,16 +319,6 @@ function toggleMute(){
   const mb=g('muteBtn');
   if(isMuted){speechSynth.cancel();if(mb)mb.classList.add('active');log('Audio muted');}
   else{if(mb)mb.classList.remove('active');log('Audio unmuted');}
-}
-
-function showTab(name,btn){
-  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  btn.classList.add('active');
-  const tab=g('tab-'+name);if(tab)tab.classList.add('active');
-  if(name==='memory')fetchMemory();
-  if(name==='mainframe')initMainframe();
-  log('Tab: '+name.toUpperCase());
 }
 
 function log(msg){
@@ -674,9 +665,6 @@ async function sendToVisionFocus(text) {
   }
 }
 
-// Sync focus core state with main core state
-const _origSetCoreState = setCoreState;
-
 // ============================================================
 //  FILE MANAGER
 // ============================================================
@@ -749,12 +737,24 @@ function quickCreate(type) {
 }
 
 // ============================================================
-//  CHESS ENGINE
+//  CHESS — chess.com embedded
 // ============================================================
-const PIECES = {
-  wK:'♔',wQ:'♕',wR:'♖',wB:'♗',wN:'♘',wP:'♙',
-  bK:'♚',bQ:'♛',bR:'♜',bB:'♝',bN:'♞',bP:'♟'
-};
+function loadChessCom(mode) {
+  const urls = {
+    play:    'https://www.chess.com/play/computer',
+    learn:   'https://www.chess.com/learn-how-to-play-chess',
+    puzzles: 'https://www.chess.com/puzzles'
+  };
+  const frame = g('chessFrame');
+  if (frame) frame.src = urls[mode] || urls.play;
+  log('Chess: ' + mode);
+}
+
+async function askVisionChessTip() {
+  const prompt = 'Give me 3 quick chess tips to improve my game. Keep it short and practical.';
+  showTab('chat', document.querySelector('.ntab'));
+  sendToVision(prompt);
+}
 
 let chessBoard = [], selectedCell = null, currentTurn = 'w', moveHistory = [], validMoves = [], lastMove = null;
 let whiteCaptured = [], blackCaptured = [];
@@ -926,7 +926,7 @@ function undoMove() {
 
 async function askVisionChessHint() {
   const boardStr = chessBoard.map((row,r)=>row.map((p,c)=>p?p:'..').join(' ')).join('\n');
-  const prompt = I am playing chess as White. Here is the current board (row 0 = black side):\n\nIt is my turn (White). What is the best move I should make? Give me one specific move and explain why briefly.;
+  const prompt = 'I am playing chess as White. Here is the current board (row 0 = black side):\n\n' + boardStr + '\n\nIt is my turn (White). What is the best move I should make? Give me one specific move and explain why briefly.';
   addMsg('user','YOU','Give me a chess hint');
   setCoreState('thinking');
   try {
@@ -938,10 +938,264 @@ async function askVisionChessHint() {
   } catch(e) { addMsg('ai','VISION','Server offline.'); }
 }
 
-// Init chess when tab opens
-const _origShowTab = showTab;
+// Init chess when tab opens — integrated into showTab directly
 function showTab(name, btn) {
-  _origShowTab(name, btn);
-  if (name === 'chess' && chessBoard.length === 0) initChess();
-  if (name === 'files') { const fp = g('filePath'); if(fp&&!fp.value) fp.value = 'C:\\\\Users\\\\USER\\\\Desktop'; }
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  const tab = g('tab-'+name);
+  if (tab) tab.classList.add('active');
+  if (name === 'memory') fetchMemory();
+  if (name === 'mainframe') initMainframe();
+  if (name === 'chess') { if (CHESS.board.length === 0) CHESS.init(); else CHESS.render(); }
+  if (name === 'screen') log('Screen share tab opened');
+  if (name === 'video') log('Video AI tab opened');
+  if (name === 'tv') checkTvStatus();
+  if (name === 'files') {
+    const fp = g('filePath');
+    if (fp && !fp.value) fp.value = 'C:\\Users\\USER\\Desktop';
+  }
+  log('Tab: ' + name.toUpperCase());
+}
+
+// ============================================================
+//  SCREEN SHARE
+// ============================================================
+let screenStream = null, mediaRecorder = null, recordedChunks = [], recInterval = null, recSeconds = 0;
+
+async function toggleScreenShare() {
+  const btn = g('screenShareBtn'), feed = g('screenFeed'), off = g('screenOff');
+  if (!screenStream) {
+    try {
+      screenStream = await navigator.mediaDevices.getDisplayMedia({video:{cursor:'always'},audio:true});
+      feed.srcObject = screenStream;
+      feed.style.display = 'block';
+      if (off) off.style.display = 'none';
+      if (btn) { btn.textContent = 'STOP SHARING'; btn.classList.add('active'); }
+      log('Screen share started');
+      screenStream.getVideoTracks()[0].addEventListener('ended', () => stopScreenShare());
+    } catch(e) {
+      log('Screen share denied: ' + e.message);
+      addMsg('system','SYSTEM','Screen share was cancelled or denied.');
+    }
+  } else {
+    stopScreenShare();
+  }
+}
+
+function stopScreenShare() {
+  if (screenStream) { screenStream.getTracks().forEach(t=>t.stop()); screenStream = null; }
+  const feed = g('screenFeed'), off = g('screenOff'), btn = g('screenShareBtn');
+  if (feed) feed.style.display = 'none';
+  if (off) off.style.display = 'flex';
+  if (btn) { btn.textContent = 'START SHARING'; btn.classList.remove('active'); }
+  log('Screen share stopped');
+}
+
+async function analyzeScreen() {
+  if (!screenStream) { addMsg('system','SYSTEM','Start screen sharing first.'); return; }
+  const feed = g('screenFeed');
+  const canvas = document.createElement('canvas');
+  canvas.width = feed.videoWidth || 1280; canvas.height = feed.videoHeight || 720;
+  canvas.getContext('2d').drawImage(feed, 0, 0, canvas.width, canvas.height);
+  const imageData = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+  const el = g('screenAnalysis'), txt = g('screenAnalysisText');
+  if (el) el.style.display = 'block';
+  if (txt) txt.textContent = 'Analyzing your screen...';
+  setCoreState('thinking');
+  try {
+    const res = await fetch('/chat', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:'Describe what you see on this screen in detail. What is the user doing? What apps or content are visible? Any suggestions?',image:imageData})});
+    const data = await res.json();
+    if (txt) txt.textContent = data.reply;
+    addMsg('ai','VISION',data.reply);
+    speak(data.reply);
+  } catch(e) { if(txt) txt.textContent = 'Server offline.'; setCoreState('idle'); }
+}
+
+function screenSnapshot() {
+  if (!screenStream) { addMsg('system','SYSTEM','Start screen sharing first.'); return; }
+  const feed = g('screenFeed');
+  const canvas = document.createElement('canvas');
+  canvas.width = feed.videoWidth; canvas.height = feed.videoHeight;
+  canvas.getContext('2d').drawImage(feed, 0, 0);
+  const a = document.createElement('a');
+  a.download = 'vision-screen-' + Date.now() + '.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+  log('Screen snapshot saved');
+}
+
+function toggleScreenRecord() {
+  if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+    startScreenRecord();
+  } else {
+    stopAndDownload();
+  }
+}
+
+function startScreenRecord() {
+  if (!screenStream) { addMsg('system','SYSTEM','Start screen sharing first.'); return; }
+  recordedChunks = []; recSeconds = 0;
+  mediaRecorder = new MediaRecorder(screenStream, {mimeType:'video/webm;codecs=vp9'});
+  mediaRecorder.ondataavailable = e => { if(e.data.size>0) recordedChunks.push(e.data); };
+  mediaRecorder.start(1000);
+  const btn = g('screenRecBtn'), status = g('screenRecStatus');
+  if (btn) { btn.textContent = 'STOP REC'; btn.classList.add('active'); }
+  if (status) status.style.display = 'flex';
+  recInterval = setInterval(() => {
+    recSeconds++;
+    const m = String(Math.floor(recSeconds/60)).padStart(2,'0');
+    const s = String(recSeconds%60).padStart(2,'0');
+    const rt = g('recTimer'); if(rt) rt.textContent = m+':'+s;
+  }, 1000);
+  log('Recording started');
+}
+
+function stopAndDownload() {
+  if (!mediaRecorder) return;
+  mediaRecorder.stop();
+  clearInterval(recInterval);
+  const btn = g('screenRecBtn'), status = g('screenRecStatus');
+  if (btn) { btn.textContent = 'RECORD'; btn.classList.remove('active'); }
+  if (status) status.style.display = 'none';
+  setTimeout(() => {
+    const blob = new Blob(recordedChunks, {type:'video/webm'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'vision-recording-' + Date.now() + '.webm';
+    a.click();
+    URL.revokeObjectURL(url);
+    log('Recording saved');
+    addMsg('ai','VISION','Recording saved to your Downloads folder.');
+  }, 500);
+}
+
+// ============================================================
+//  VIDEO AI
+// ============================================================
+let fullVideoScript = '';
+
+async function generateVideo() {
+  const topic  = g('videoTopic') ? g('videoTopic').value.trim() : '';
+  const style  = g('videoStyle') ? g('videoStyle').value : 'youtube';
+  const length = g('videoLength') ? g('videoLength').value : '5min';
+  const tone   = g('videoTone') ? g('videoTone').value : 'engaging';
+  const extra  = g('videoExtra') ? g('videoExtra').value.trim() : '';
+
+  if (!topic) { addMsg('system','SYSTEM','Enter a video topic first.'); return; }
+
+  const lengthMap = {'30s':'30 seconds','1min':'1 minute','3min':'3 minutes','5min':'5 minutes','10min':'10 minutes','20min':'20 minutes','unlimited':'as long as needed with no length limit — make it comprehensive and complete'};
+  const styleMap  = {youtube:'YouTube video',tiktok:'TikTok short-form video',documentary:'documentary',tutorial:'tutorial/how-to video',vlog:'vlog',story:'story/narrative video',ad:'advertisement'};
+
+  const prompt = 'Write a COMPLETE, FULL ' + styleMap[style] + ' script about: ' + topic + '\n\nLength: ' + lengthMap[length] + '\nTone: ' + tone + '\n' + (extra?'Additional details: '+extra+'\n':'') + '\nInclude:\n- Attention-grabbing hook (first 3 seconds)\n- Full narration/dialogue\n- Scene descriptions in [brackets]\n- B-roll suggestions\n- On-screen text suggestions\n- Call to action at the end\n\nWrite the COMPLETE script from start to finish. Do not summarize — write every word that would be spoken.';
+
+  showVideoOutput('⚡ Vision is writing your full video script...');
+  log('Generating video script...');
+
+  try {
+    const res  = await fetch('/chat', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:prompt})});
+    const data = await res.json();
+    fullVideoScript = data.reply;
+    showVideoOutput(data.reply);
+    addMsg('ai','VISION','Your video script is ready! Check the VIDEO AI tab.');
+  } catch(e) { showVideoOutput('Server offline. Start server.py first.'); }
+}
+
+async function generateScenes() {
+  const topic = g('videoTopic') ? g('videoTopic').value.trim() : '';
+  if (!topic) { addMsg('system','SYSTEM','Enter a topic first.'); return; }
+  const prompt = 'Create a detailed scene-by-scene breakdown for a video about: ' + topic + '\n\nFor each scene include:\n- Scene number and title\n- Duration\n- What is shown on screen\n- What is said (narration/dialogue)\n- Music/sound suggestions\n- Camera angle suggestions\n\nMake it detailed and professional.';
+  showVideoOutput('Creating scene breakdown...');
+  try {
+    const res = await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:prompt})});
+    const data = await res.json();
+    fullVideoScript = data.reply;
+    showVideoOutput(data.reply);
+  } catch(e) { showVideoOutput('Server offline.'); }
+}
+
+async function generateHooks() {
+  const topic = g('videoTopic') ? g('videoTopic').value.trim() : '';
+  if (!topic) { addMsg('system','SYSTEM','Enter a topic first.'); return; }
+  const prompt = 'Write 10 viral video hooks for a video about: ' + topic + '\n\nEach hook should:\n- Be under 15 words\n- Create immediate curiosity or emotion\n- Work for YouTube, TikTok, and Instagram\n- Be different styles (question, shocking stat, story, controversy, etc.)\n\nNumber each hook and explain why it works.';
+  showVideoOutput('Generating viral hooks...');
+  try {
+    const res = await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:prompt})});
+    const data = await res.json();
+    fullVideoScript = data.reply;
+    showVideoOutput(data.reply);
+  } catch(e) { showVideoOutput('Server offline.'); }
+}
+
+async function continueVideo() {
+  if (!fullVideoScript) { addMsg('system','SYSTEM','Generate a script first.'); return; }
+  const prompt = 'Continue and expand this video script. Add more content, more detail, more scenes. Make it longer and more comprehensive:\n\n' + fullVideoScript.substring(0, 2000) + '\n\n[Continue from here with more content...]';
+  showVideoOutput(fullVideoScript + '\n\n⚡ Continuing...');
+  try {
+    const res = await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:prompt})});
+    const data = await res.json();
+    fullVideoScript = fullVideoScript + '\n\n' + data.reply;
+    showVideoOutput(fullVideoScript);
+  } catch(e) { showVideoOutput(fullVideoScript + '\n\nServer offline.'); }
+}
+
+function showVideoOutput(text) {
+  const el = g('videoOutput'), txt = g('videoScriptText');
+  if (el) el.style.display = 'block';
+  if (txt) txt.textContent = text;
+  if (el) el.scrollIntoView({behavior:'smooth'});
+}
+
+function copyVideoScript() {
+  if (fullVideoScript) navigator.clipboard.writeText(fullVideoScript).then(()=>log('Script copied'));
+}
+
+function speakVideoScript() {
+  if (fullVideoScript) speak(fullVideoScript.substring(0, 500) + '...');
+}
+
+function clearVideo() {
+  fullVideoScript = '';
+  const el = g('videoOutput'); if(el) el.style.display = 'none';
+  const ti = g('videoTopic'); if(ti) ti.value = '';
+  const te = g('videoExtra'); if(te) te.value = '';
+}
+
+// ============================================================
+//  TV CONTROL
+// ============================================================
+async function tvCmd(command, data) {
+  const result = g('tvResult'), txt = g('tvResultText');
+  if (result) result.style.display = 'block';
+  if (txt) txt.textContent = 'Sending command...';
+  log('TV: ' + command);
+  try {
+    const res = await fetch('/tv/' + command, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data || {})
+    });
+    const d = await res.json();
+    if (txt) txt.textContent = d.success ? 'Done: ' + command : 'Error: ' + d.message;
+    if (txt) txt.style.color = d.success ? '#c0e0ff' : '#ff4466';
+  } catch(e) {
+    if (txt) { txt.textContent = 'Server offline.'; txt.style.color = '#ff4466'; }
+  }
+}
+
+async function checkTvStatus() {
+  const el = g('tvStatus');
+  if (el) el.textContent = 'CHECKING...';
+  try {
+    const res = await fetch('/tv/status', {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const d = await res.json();
+    const online = d.result && d.result.includes('True');
+    if (el) {
+      el.textContent = online ? 'TV ONLINE' : 'TV OFFLINE';
+      el.style.color = online ? '#00ff88' : '#ff4466';
+      el.style.borderColor = online ? 'rgba(0,255,136,0.4)' : 'rgba(255,50,80,0.4)';
+    }
+  } catch(e) {
+    if (el) { el.textContent = 'SERVER OFFLINE'; el.style.color = '#ff4466'; }
+  }
 }

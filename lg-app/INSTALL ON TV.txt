@@ -1,0 +1,36 @@
+HOW TO INSTALL VISION AI ON YOUR LG TV
+=======================================
+
+METHOD 1 - DEVELOPER MODE (Recommended)
+-----------------------------------------
+1. On your LG TV remote, go to Settings
+2. Go to "General" -> "About This TV"  
+3. Click the TV software version number 5 times fast
+   -> This enables Developer Mode
+
+4. Download "LG webOS Dev Manager" on your laptop from:
+   https://webostv.developer.lge.com/develop/tools/webos-studio
+
+5. Connect TV and laptop to same WiFi
+
+6. In Dev Manager, click "Device Manager" -> Add your TV IP (192.168.1.11)
+
+7. Click "Install" and select this lg-app folder
+
+8. Vision AI will appear on your TV home screen!
+
+
+METHOD 2 - DIRECT BROWSER (Works RIGHT NOW, no install needed)
+---------------------------------------------------------------
+1. On your LG TV, press HOME button on remote
+2. Find "Web Browser" app (or LG Browser)
+3. Type this address: http://192.168.100.136:5000/tv-app
+4. Vision AI loads full screen on your TV!
+5. Use your remote's arrow keys and OK button to navigate
+
+
+IMPORTANT:
+- Your laptop must be running server.py
+- Both TV and laptop must be on same WiFi
+- Laptop IP: 192.168.100.136
+- TV IP: 192.168.1.11
